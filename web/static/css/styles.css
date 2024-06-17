@@ -1,0 +1,107 @@
+body {
+    background-color: #121212;
+    color: #ffffff;
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+#app {
+    margin: 20px;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+h1 {
+    color: #bb86fc;
+    font-weight: 500;
+    margin: 0;
+}
+
+nav {
+    display: flex;
+    gap: 10px;
+}
+
+nav a {
+    color: #ffffff;
+    text-decoration: none;
+    padding: 10px 20px;
+    border: 1px solid #333;
+    border-radius: 5px;
+    background-color: #1f1f1f;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+nav a:hover {
+    background-color: #bb86fc;
+    color: #121212;
+}
+
+#filters {
+    display: flex;
+    gap: 10px;
+}
+
+#search,
+#service-filter {
+    padding: 10px;
+    border: 1px solid #333;
+    background-color: #1f1f1f;
+    color: #ffffff;
+    border-radius: 5px;
+}
+
+#task-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.task {
+    background-color: #1f1f1f;
+    border: 1px solid #333;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.task:hover {
+    background-color: #bb86fc;
+    color: #121212;
+}
+
+.task:hover h2 {
+    color: #121212;
+}
+
+.task h2 {
+    color: #bb86fc;
+    margin: 0 0 10px;
+    font-weight: 500;
+}
+
+.task p {
+    margin: 5px 0;
+}
+
+button#today-button {
+    padding: 10px 20px;
+    border: none;
+    background-color: #bb86fc;
+    color: #121212;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+button#today-button:hover {
+    background-color: #121212;
+    color: #bb86fc;
+}
