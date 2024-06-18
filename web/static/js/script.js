@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const serviceFilter = document.getElementById('service-filter');
             const searchInput = document.getElementById('search');
 
-            // Заполнить фильтр сервисов
+            // Fill the service filter dropdown
             const services = [...new Set(data.map(task => task.service))];
             services.forEach(service => {
                 const option = document.createElement('option');
@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 serviceFilter.appendChild(option);
             });
 
-            // Функция для корректировки времени согласно временной зоне пользователя
+            // Function to convert time to user's time zone
             function convertToUserTimeZone(time) {
                 const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
                 const date = new Date(`1970-01-01T${time}Z`);
@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return date.toLocaleTimeString([], options);
             }
 
-            // Функция для отображения задач
+            // Function to display tasks
             function displayTasks(tasks) {
                 taskList.innerHTML = '';
                 tasks.forEach(task => {
@@ -42,10 +42,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
 
-            // Отображение всех задач при загрузке
+            // Display all tasks
             displayTasks(data);
 
-            // Фильтрация задач
+            // Function to filter tasks
             function filterTasks() {
                 const searchText = searchInput.value.toLowerCase();
                 const selectedService = serviceFilter.value;
@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 displayTasks(filteredTasks);
             }
 
-            // Добавить обработчики событий для фильтров
+            // Event listeners
             searchInput.addEventListener('input', filterTasks);
             serviceFilter.addEventListener('change', filterTasks);
         });

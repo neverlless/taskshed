@@ -16,7 +16,7 @@ import (
 )
 
 func main() {
-	// Параметры командной строки
+	// Comand line flags
 	var (
 		port       = flag.String("port", "8080", "Port to run the server on")
 		dbType     = flag.String("db-type", getEnv("DB_TYPE", "sqlite"), "Database type (sqlite or postgres)")
@@ -28,10 +28,10 @@ func main() {
 	)
 	flag.Parse()
 
-	// Инициализация логирования
+	// Logger initialization
 	logger.Init()
 
-	// Инициализация базы данных
+	// Database initialization
 	var err error
 	var isPostgres bool
 	if *dbType == "postgres" {
@@ -50,13 +50,13 @@ func main() {
 		}).Fatal(err)
 	}
 
-	// Сохранение типа базы данных в глобальную переменную
+	// Set database type
 	database.IsPostgres = isPostgres
 
-	// Инициализация API маршрутов
+	// API initialization
 	router := api.InitRoutes()
 
-	// Запуск веб-сервера
+	// Server start
 	addr := fmt.Sprintf(":%s", *port)
 	logger.Log.WithFields(logrus.Fields{
 		"level":  "info",
