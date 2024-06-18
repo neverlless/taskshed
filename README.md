@@ -170,10 +170,9 @@ TaskShed simplifies the management of distributed system schedules by providing 
 
 ## Screenshots
 
-- Home page: <img width="1506" alt="image" src="https://github.com/neverlless/taskshed/assets/104908866/b0704a20-f354-454b-859c-33dc72966e22">
+- Home page: ![image](https://github.com/neverlless/taskshed/assets/104908866/b0704a20-f354-454b-859c-33dc72966e22)
 
-- Calendar View: <img width="1492" alt="image" src="https://github.com/neverlless/taskshed/assets/104908866/92d44ee0-37a6-4c8d-a9a3-58d27e246352">
-
+- Calendar View: ![image](https://github.com/neverlless/taskshed/assets/104908866/92d44ee0-37a6-4c8d-a9a3-58d27e246352)
 
 ## Example cURL Commands
 

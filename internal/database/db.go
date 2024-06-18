@@ -37,17 +37,35 @@ func InitPostgres(host, port, user, password, dbname string) error {
 }
 
 func createTables() error {
-	createTableQuery := `
-    CREATE TABLE IF NOT EXISTS tasks (
-        id SERIAL PRIMARY KEY,
-        name TEXT NOT NULL,
-        service TEXT NOT NULL,
-        time TEXT NOT NULL,
-        days_of_week TEXT NOT NULL,
-        is_recurring BOOLEAN NOT NULL,
-        description TEXT
-    );
-    `
+	var createTableQuery string
+	if IsPostgres {
+		createTableQuery = `
+        CREATE TABLE IF NOT EXISTS tasks (
+            id SERIAL PRIMARY KEY,
+            name TEXT NOT NULL,
+            service TEXT NOT NULL,
+            time TEXT NOT NULL,
+            days_of_week TEXT NOT NULL,
+            is_recurring BOOLEAN NOT NULL,
+            description TEXT,
+            hosts TEXT
+        );
+        `
+	} else {
+		createTableQuery = `
+        CREATE TABLE IF NOT EXISTS tasks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            service TEXT NOT NULL,
+            time TEXT NOT NULL,
+            days_of_week TEXT NOT NULL,
+            is_recurring BOOLEAN NOT NULL,
+            description TEXT,
+            hosts TEXT
+        );
+        `
+	}
+
 	_, err := DB.Exec(createTableQuery)
 	if err != nil {
 		logger.Log.WithFields(logrus.Fields{

@@ -8,4 +8,5 @@ type Task struct {
 	DaysOfWeek  string `json:"days_of_week"`
 	IsRecurring bool   `json:"is_recurring"`
 	Description string `json:"description,omitempty"`
+	Hosts       string `json:"hosts,omitempty"`
 }

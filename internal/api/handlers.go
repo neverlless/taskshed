@@ -1,16 +1,17 @@
 package api
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 
-	"github.com/gorilla/mux"
 	"github.com/neverlless/taskshed/internal/database"
 	"github.com/neverlless/taskshed/internal/logger"
 
+	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 )
 
@@ -31,13 +32,13 @@ func CreateTask(w http.ResponseWriter, r *http.Request) {
 	var id int
 	if database.IsPostgres {
 		err = database.DB.QueryRow(
-			"INSERT INTO tasks (name, service, time, days_of_week, is_recurring, description) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
-			task.Name, task.Service, task.Time, task.DaysOfWeek, task.IsRecurring, task.Description,
+			"INSERT INTO tasks (name, service, time, days_of_week, is_recurring, description, hosts) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id",
+			task.Name, task.Service, task.Time, task.DaysOfWeek, task.IsRecurring, task.Description, task.Hosts,
 		).Scan(&id)
 	} else {
 		result, err := database.DB.Exec(
-			"INSERT INTO tasks (name, service, time, days_of_week, is_recurring, description) VALUES (?, ?, ?, ?, ?, ?)",
-			task.Name, task.Service, task.Time, task.DaysOfWeek, task.IsRecurring, task.Description,
+			"INSERT INTO tasks (name, service, time, days_of_week, is_recurring, description, hosts) VALUES (?, ?, ?, ?, ?, ?, ?)",
+			task.Name, task.Service, task.Time, task.DaysOfWeek, task.IsRecurring, task.Description, task.Hosts,
 		)
 		if err == nil {
 			id64, err := result.LastInsertId()
@@ -90,8 +91,8 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = database.DB.Exec("UPDATE tasks SET name=$1, service=$2, time=$3, days_of_week=$4, is_recurring=$5, description=$6 WHERE id=$7",
-		task.Name, task.Service, task.Time, task.DaysOfWeek, task.IsRecurring, task.Description, id)
+	_, err = database.DB.Exec("UPDATE tasks SET name=$1, service=$2, time=$3, days_of_week=$4, is_recurring=$5, description=$6, hosts=$7 WHERE id=$8",
+		task.Name, task.Service, task.Time, task.DaysOfWeek, task.IsRecurring, task.Description, task.Hosts, id)
 	if err != nil {
 		logger.Log.WithFields(logrus.Fields{
 			"level":  "error",
@@ -138,7 +139,7 @@ func DeleteTask(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetTasks(w http.ResponseWriter, r *http.Request) {
-	rows, err := database.DB.Query("SELECT id, name, service, time, days_of_week, is_recurring, description FROM tasks")
+	rows, err := database.DB.Query("SELECT id, name, service, time, days_of_week, is_recurring, description, hosts FROM tasks")
 	if err != nil {
 		logger.Log.WithFields(logrus.Fields{
 			"level":  "error",
@@ -154,7 +155,10 @@ func GetTasks(w http.ResponseWriter, r *http.Request) {
 	var tasks []database.Task
 	for rows.Next() {
 		var task database.Task
-		err := rows.Scan(&task.ID, &task.Name, &task.Service, &task.Time, &task.DaysOfWeek, &task.IsRecurring, &task.Description)
+		var description sql.NullString
+		var hosts sql.NullString
+
+		err := rows.Scan(&task.ID, &task.Name, &task.Service, &task.Time, &task.DaysOfWeek, &task.IsRecurring, &description, &hosts)
 		if err != nil {
 			logger.Log.WithFields(logrus.Fields{
 				"level":  "error",
@@ -165,6 +169,9 @@ func GetTasks(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
+		task.Description = description.String
+		task.Hosts = hosts.String
 		tasks = append(tasks, task)
 	}
 
