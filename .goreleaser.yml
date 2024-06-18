@@ -1,0 +1,13 @@
+# .goreleaser.yml
+project_name: taskshed
+
+builds:
+  - main: ./cmd/server/main.go
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - 386
+      - arm64
