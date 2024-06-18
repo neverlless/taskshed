@@ -36,6 +36,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <p><strong>Days of Week:</strong> ${task.days_of_week}</p>
                         <p><strong>Is Recurring:</strong> ${task.is_recurring}</p>
                         <p><strong>Description:</strong> ${task.description}</p>
+                        ${task.hosts ? `<p><strong>Hosts:</strong> ${task.hosts}</p>` : ''}
                     `;
                     taskList.appendChild(taskDiv);
                 });

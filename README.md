@@ -81,7 +81,7 @@ TaskShed simplifies the management of distributed system schedules by providing 
 - `DB_NAME`: Database name
 - `DB_USER`: Database user
 - `DB_PASSWORD`: Database password
-  
+
 ## API Documentation
 
 ### Create Task
@@ -96,7 +96,8 @@ TaskShed simplifies the management of distributed system schedules by providing 
         "time": "03:00",
         "days_of_week": "Mon,Wed,Fri",
         "is_recurring": true,
-        "description": "Daily backup of the database"
+        "description": "Daily backup of the database",
+        "hosts": "host1,host2"
     }
     ```
 
@@ -110,7 +111,8 @@ TaskShed simplifies the management of distributed system schedules by providing 
         "time": "03:00",
         "days_of_week": "Mon,Wed,Fri",
         "is_recurring": true,
-        "description": "Daily backup of the database"
+        "description": "Daily backup of the database",
+        "hosts": "host1,host2"
     }
     ```
 
@@ -126,7 +128,8 @@ TaskShed simplifies the management of distributed system schedules by providing 
         "time": "03:00",
         "days_of_week": "Mon,Wed,Fri",
         "is_recurring": true,
-        "description": "Daily backup of the database"
+        "description": "Daily backup of the database",
+        "hosts": "host1,host2"
     }
     ```
 
@@ -140,7 +143,8 @@ TaskShed simplifies the management of distributed system schedules by providing 
         "time": "03:00",
         "days_of_week": "Mon,Wed,Fri",
         "is_recurring": true,
-        "description": "Daily backup of the database"
+        "description": "Daily backup of the database",
+        "hosts": "host1,host2"
     }
     ```
 
@@ -163,7 +167,8 @@ TaskShed simplifies the management of distributed system schedules by providing 
             "time": "03:00",
             "days_of_week": "Mon,Wed,Fri",
             "is_recurring": true,
-            "description": "Daily backup of the database"
+            "description": "Daily backup of the database",
+            "hosts": "host1,host2"
         }
     ]
     ```
@@ -185,7 +190,8 @@ TaskShed simplifies the management of distributed system schedules by providing 
         "time": "03:00",
         "days_of_week": "Mon,Wed,Fri",
         "is_recurring": true,
-        "description": "Daily backup of the database"
+        "description": "Daily backup of the database",
+        "hosts": "host1,host2"
     }'
     ```
 
@@ -198,7 +204,8 @@ TaskShed simplifies the management of distributed system schedules by providing 
         "time": "03:00",
         "days_of_week": "Mon,Wed,Fri",
         "is_recurring": true,
-        "description": "Daily backup of the database"
+        "description": "Daily backup of the database",
+        "hosts": "host1"
     }'
     ```
 
