@@ -12,6 +12,7 @@ import (
 )
 
 var DB *sql.DB
+var IsPostgres bool
 
 func InitSQLite() error {
 	var err error

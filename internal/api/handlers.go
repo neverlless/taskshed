@@ -7,10 +7,10 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/neverlless/taskshed/internal/database"
 	"github.com/neverlless/taskshed/internal/logger"
 
-	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 )
 
@@ -28,32 +28,37 @@ func CreateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := database.DB.Exec("INSERT INTO tasks (name, service, time, days_of_week, is_recurring, description) VALUES ($1, $2, $3, $4, $5, $6)",
-		task.Name, task.Service, task.Time, task.DaysOfWeek, task.IsRecurring, task.Description)
+	var id int
+	if database.IsPostgres {
+		err = database.DB.QueryRow(
+			"INSERT INTO tasks (name, service, time, days_of_week, is_recurring, description) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
+			task.Name, task.Service, task.Time, task.DaysOfWeek, task.IsRecurring, task.Description,
+		).Scan(&id)
+	} else {
+		result, err := database.DB.Exec(
+			"INSERT INTO tasks (name, service, time, days_of_week, is_recurring, description) VALUES (?, ?, ?, ?, ?, ?)",
+			task.Name, task.Service, task.Time, task.DaysOfWeek, task.IsRecurring, task.Description,
+		)
+		if err == nil {
+			id64, err := result.LastInsertId()
+			if err == nil {
+				id = int(id64)
+			}
+		}
+	}
+
 	if err != nil {
 		logger.Log.WithFields(logrus.Fields{
 			"level":  "error",
 			"ts":     time.Now().Format(time.RFC3339Nano),
-			"caller": "handlers.go:23",
+			"caller": "handlers.go:30",
 			"msg":    fmt.Sprintf("Failed to insert task: %v", err),
 		}).Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	id, err := result.LastInsertId()
-	if err != nil {
-		logger.Log.WithFields(logrus.Fields{
-			"level":  "error",
-			"ts":     time.Now().Format(time.RFC3339Nano),
-			"caller": "handlers.go:29",
-			"msg":    fmt.Sprintf("Failed to get last insert id: %v", err),
-		}).Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	task.ID = int(id)
+	task.ID = id
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(task)
 }

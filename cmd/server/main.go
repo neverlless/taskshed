@@ -3,13 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/neverlless/taskshed/internal/api"
-	"github.com/neverlless/taskshed/internal/database"
-	"github.com/neverlless/taskshed/internal/logger"
 	"log"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/neverlless/taskshed/internal/api"
+	"github.com/neverlless/taskshed/internal/database"
+	"github.com/neverlless/taskshed/internal/logger"
 
 	"github.com/sirupsen/logrus"
 )
@@ -32,10 +33,13 @@ func main() {
 
 	// Инициализация базы данных
 	var err error
+	var isPostgres bool
 	if *dbType == "postgres" {
 		err = database.InitPostgres(*dbHost, *dbPort, *dbUser, *dbPassword, *dbName)
+		isPostgres = true
 	} else {
 		err = database.InitSQLite()
+		isPostgres = false
 	}
 	if err != nil {
 		logger.Log.WithFields(logrus.Fields{
@@ -45,6 +49,9 @@ func main() {
 			"msg":    fmt.Sprintf("Failed to initialize database: %v", err),
 		}).Fatal(err)
 	}
+
+	// Сохранение типа базы данных в глобальную переменную
+	database.IsPostgres = isPostgres
 
 	// Инициализация API маршрутов
 	router := api.InitRoutes()
