@@ -1,9 +1,10 @@
 package logger
 
 import (
-	"github.com/sirupsen/logrus"
-	"io"
 	"os"
+	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 var Log *logrus.Logger
@@ -11,16 +12,11 @@ var Log *logrus.Logger
 func Init() {
 	Log = logrus.New()
 	Log.SetFormatter(&logrus.TextFormatter{
-		FullTimestamp: true,
-		ForceColors:   true,
+		FullTimestamp:   true,
+		TimestampFormat: time.RFC3339Nano,
+		DisableColors:   true,
 	})
 
-	file, err := os.OpenFile("taskshed.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err != nil {
-		Log.Fatal(err)
-	}
-
-	Log.SetOutput(io.MultiWriter(file, os.Stdout))
-
+	Log.SetOutput(os.Stdout)
 	Log.SetLevel(logrus.InfoLevel)
 }

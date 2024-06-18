@@ -2,10 +2,13 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/neverlless/taskshed/internal/database"
-	"github.com/neverlless/taskshed/internal/logger"
+	"fmt"
 	"net/http"
 	"strconv"
+	"time"
+
+	"github.com/neverlless/taskshed/internal/database"
+	"github.com/neverlless/taskshed/internal/logger"
 
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
@@ -16,20 +19,24 @@ func CreateTask(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&task)
 	if err != nil {
 		logger.Log.WithFields(logrus.Fields{
-			"module": "api",
-			"line":   14,
-		}).Errorf("Failed to decode task: %v", err)
+			"level":  "error",
+			"ts":     time.Now().Format(time.RFC3339Nano),
+			"caller": "handlers.go:14",
+			"msg":    fmt.Sprintf("Failed to decode task: %v", err),
+		}).Error(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	result, err := database.DB.Exec("INSERT INTO tasks (name, service, time, days_of_week, is_recurring, description) VALUES (?, ?, ?, ?, ?, ?)",
+	result, err := database.DB.Exec("INSERT INTO tasks (name, service, time, days_of_week, is_recurring, description) VALUES ($1, $2, $3, $4, $5, $6)",
 		task.Name, task.Service, task.Time, task.DaysOfWeek, task.IsRecurring, task.Description)
 	if err != nil {
 		logger.Log.WithFields(logrus.Fields{
-			"module": "api",
-			"line":   23,
-		}).Errorf("Failed to insert task: %v", err)
+			"level":  "error",
+			"ts":     time.Now().Format(time.RFC3339Nano),
+			"caller": "handlers.go:23",
+			"msg":    fmt.Sprintf("Failed to insert task: %v", err),
+		}).Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -37,9 +44,11 @@ func CreateTask(w http.ResponseWriter, r *http.Request) {
 	id, err := result.LastInsertId()
 	if err != nil {
 		logger.Log.WithFields(logrus.Fields{
-			"module": "api",
-			"line":   29,
-		}).Errorf("Failed to get last insert id: %v", err)
+			"level":  "error",
+			"ts":     time.Now().Format(time.RFC3339Nano),
+			"caller": "handlers.go:29",
+			"msg":    fmt.Sprintf("Failed to get last insert id: %v", err),
+		}).Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -54,9 +63,11 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
 		logger.Log.WithFields(logrus.Fields{
-			"module": "api",
-			"line":   42,
-		}).Errorf("Invalid task ID: %v", err)
+			"level":  "error",
+			"ts":     time.Now().Format(time.RFC3339Nano),
+			"caller": "handlers.go:42",
+			"msg":    fmt.Sprintf("Invalid task ID: %v", err),
+		}).Error(err)
 		http.Error(w, "Invalid task ID", http.StatusBadRequest)
 		return
 	}
@@ -65,20 +76,24 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(r.Body).Decode(&task)
 	if err != nil {
 		logger.Log.WithFields(logrus.Fields{
-			"module": "api",
-			"line":   50,
-		}).Errorf("Failed to decode task: %v", err)
+			"level":  "error",
+			"ts":     time.Now().Format(time.RFC3339Nano),
+			"caller": "handlers.go:50",
+			"msg":    fmt.Sprintf("Failed to decode task: %v", err),
+		}).Error(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	_, err = database.DB.Exec("UPDATE tasks SET name=?, service=?, time=?, days_of_week=?, is_recurring=?, description=? WHERE id=?",
+	_, err = database.DB.Exec("UPDATE tasks SET name=$1, service=$2, time=$3, days_of_week=$4, is_recurring=$5, description=$6 WHERE id=$7",
 		task.Name, task.Service, task.Time, task.DaysOfWeek, task.IsRecurring, task.Description, id)
 	if err != nil {
 		logger.Log.WithFields(logrus.Fields{
-			"module": "api",
-			"line":   58,
-		}).Errorf("Failed to update task: %v", err)
+			"level":  "error",
+			"ts":     time.Now().Format(time.RFC3339Nano),
+			"caller": "handlers.go:58",
+			"msg":    fmt.Sprintf("Failed to update task: %v", err),
+		}).Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -93,19 +108,23 @@ func DeleteTask(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
 		logger.Log.WithFields(logrus.Fields{
-			"module": "api",
-			"line":   71,
-		}).Errorf("Invalid task ID: %v", err)
+			"level":  "error",
+			"ts":     time.Now().Format(time.RFC3339Nano),
+			"caller": "handlers.go:71",
+			"msg":    fmt.Sprintf("Invalid task ID: %v", err),
+		}).Error(err)
 		http.Error(w, "Invalid task ID", http.StatusBadRequest)
 		return
 	}
 
-	_, err = database.DB.Exec("DELETE FROM tasks WHERE id=?", id)
+	_, err = database.DB.Exec("DELETE FROM tasks WHERE id=$1", id)
 	if err != nil {
 		logger.Log.WithFields(logrus.Fields{
-			"module": "api",
-			"line":   77,
-		}).Errorf("Failed to delete task: %v", err)
+			"level":  "error",
+			"ts":     time.Now().Format(time.RFC3339Nano),
+			"caller": "handlers.go:77",
+			"msg":    fmt.Sprintf("Failed to delete task: %v", err),
+		}).Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -117,9 +136,11 @@ func GetTasks(w http.ResponseWriter, r *http.Request) {
 	rows, err := database.DB.Query("SELECT id, name, service, time, days_of_week, is_recurring, description FROM tasks")
 	if err != nil {
 		logger.Log.WithFields(logrus.Fields{
-			"module": "api",
-			"line":   86,
-		}).Errorf("Failed to query tasks: %v", err)
+			"level":  "error",
+			"ts":     time.Now().Format(time.RFC3339Nano),
+			"caller": "handlers.go:86",
+			"msg":    fmt.Sprintf("Failed to query tasks: %v", err),
+		}).Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -131,9 +152,11 @@ func GetTasks(w http.ResponseWriter, r *http.Request) {
 		err := rows.Scan(&task.ID, &task.Name, &task.Service, &task.Time, &task.DaysOfWeek, &task.IsRecurring, &task.Description)
 		if err != nil {
 			logger.Log.WithFields(logrus.Fields{
-				"module": "api",
-				"line":   96,
-			}).Errorf("Failed to scan task: %v", err)
+				"level":  "error",
+				"ts":     time.Now().Format(time.RFC3339Nano),
+				"caller": "handlers.go:96",
+				"msg":    fmt.Sprintf("Failed to scan task: %v", err),
+			}).Error(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
