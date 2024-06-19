@@ -21,6 +21,7 @@ func InitSQLite() error {
 		return err
 	}
 
+	IsPostgres = false
 	return createTables()
 }
 
@@ -33,6 +34,7 @@ func InitPostgres(host, port, user, password, dbname string) error {
 		return err
 	}
 
+	IsPostgres = true
 	return createTables()
 }
 
