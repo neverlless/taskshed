@@ -86,7 +86,7 @@ TaskShed simplifies the management of distributed system schedules by providing 
 
 ### Create Task
 
-- Endpoint: POST `/tasks`
+- Endpoint: POST `/api/tasks`
 - Request Body:
 
     ```json
@@ -118,7 +118,7 @@ TaskShed simplifies the management of distributed system schedules by providing 
 
 ### Update Task
 
-- Endpoint: PUT `/tasks/{id}`
+- Endpoint: PUT `/api/tasks/{id}`
 - Request Body:
 
     ```json
@@ -150,12 +150,12 @@ TaskShed simplifies the management of distributed system schedules by providing 
 
 ### Delete Task
 
-- Endpoint: DELETE `/tasks/{id}`
+- Endpoint: DELETE `/api/tasks/{id}`
 - Response Body: 204 No Content
 
 ### Get Task
 
-- Endpoint: GET `/tasks`
+- Endpoint: GET `/api/tasks`
 - Response Body:
 
     ```json
@@ -184,7 +184,7 @@ TaskShed simplifies the management of distributed system schedules by providing 
 - Create Task:
 
     ```sh
-    curl -X POST http://localhost:8080/tasks -H "Content-Type: application/json" -d '{
+    curl -X POST http://localhost:8080/api/tasks -H "Content-Type: application/json" -d '{
         "name": "Backup Database",
         "service": "Database Service",
         "time": "03:00",
@@ -198,7 +198,7 @@ TaskShed simplifies the management of distributed system schedules by providing 
 - Update Task:
 
     ```sh
-    curl -X PUT http://localhost:8080/tasks/1 -H "Content-Type: application/json" -d '{
+    curl -X PUT http://localhost:8080/api/tasks/1 -H "Content-Type: application/json" -d '{
         "name": "Backup Database",
         "service": "Database Service",
         "time": "03:00",
@@ -212,11 +212,11 @@ TaskShed simplifies the management of distributed system schedules by providing 
 - Delete Task:
 
     ```sh
-    curl -X DELETE http://localhost:8080/tasks/1
+    curl -X DELETE http://localhost:8080/api/tasks/1
     ```
 
 - Get Task:
 
     ```sh
-    curl http://localhost:8080/tasks
+    curl http://localhost:8080/api/tasks
     ```
