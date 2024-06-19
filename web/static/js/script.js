@@ -1,12 +1,15 @@
 document.addEventListener('DOMContentLoaded', function() {
-    fetch('/tasks')
+    fetch('/api/tasks')
         .then(response => response.json())
         .then(data => {
             const taskList = document.getElementById('task-list');
             const serviceFilter = document.getElementById('service-filter');
             const searchInput = document.getElementById('search');
+            const viewToggle = document.getElementById('view-toggle');
+            const downloadCsvButton = document.getElementById('download-csv');
+            let isGridView = true;
 
-            // Fill the service filter dropdown
+            // Заполнить фильтр сервисов
             const services = [...new Set(data.map(task => task.service))];
             services.forEach(service => {
                 const option = document.createElement('option');
@@ -15,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 serviceFilter.appendChild(option);
             });
 
-            // Function to convert time to user's time zone
+            // Функция для корректировки времени согласно временной зоне пользователя
             function convertToUserTimeZone(time) {
                 const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
                 const date = new Date(`1970-01-01T${time}Z`);
@@ -23,7 +26,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return date.toLocaleTimeString([], options);
             }
 
-            // Function to display tasks
+            // Функция для отображения задач
             function displayTasks(tasks) {
                 taskList.innerHTML = '';
                 tasks.forEach(task => {
@@ -42,10 +45,75 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
 
-            // Display all tasks
+            // Функция для отображения задач в виде списка
+            function displayTasksList(tasks) {
+                taskList.innerHTML = '';
+                const container = document.createElement('div');
+                container.className = 'task-table-container';
+                const table = document.createElement('table');
+                table.className = 'task-table';
+                table.innerHTML = `
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Service</th>
+                            <th>Time</th>
+                            <th>Days of Week</th>
+                            <th>Is Recurring</th>
+                            <th>Description</th>
+                            <th>Hosts</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                `;
+                tasks.forEach(task => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${task.name}</td>
+                        <td>${task.service}</td>
+                        <td>${convertToUserTimeZone(task.time)}</td>
+                        <td>${task.days_of_week}</td>
+                        <td>${task.is_recurring}</td>
+                        <td>${task.description}</td>
+                        <td>${task.hosts || ''}</td>
+                    `;
+                    table.querySelector('tbody').appendChild(row);
+                });
+                container.appendChild(table);
+                taskList.appendChild(container);
+            }
+
+            // Функция для загрузки задач в CSV
+            function downloadCSV(tasks) {
+                const csvContent = [
+                    ['Name', 'Service', 'Time', 'Days of Week', 'Is Recurring', 'Description', 'Hosts'],
+                    ...tasks.map(task => [
+                        task.name,
+                        task.service,
+                        convertToUserTimeZone(task.time),
+                        task.days_of_week,
+                        task.is_recurring,
+                        task.description,
+                        task.hosts || ''
+                    ])
+                ].map(e => e.join(";")).join("\n");
+
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.setAttribute('href', url);
+                link.setAttribute('download', 'tasks.csv');
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+
+            // Отображение всех задач при загрузке
             displayTasks(data);
 
-            // Function to filter tasks
+            // Фильтрация задач
             function filterTasks() {
                 const searchText = searchInput.value.toLowerCase();
                 const selectedService = serviceFilter.value;
@@ -53,11 +121,26 @@ document.addEventListener('DOMContentLoaded', function() {
                     return (task.name.toLowerCase().includes(searchText) || task.service.toLowerCase().includes(searchText)) &&
                            (selectedService === '' || task.service === selectedService);
                 });
-                displayTasks(filteredTasks);
+                if (isGridView) {
+                    displayTasks(filteredTasks);
+                } else {
+                    displayTasksList(filteredTasks);
+                }
             }
 
-            // Event listeners
+            // Добавить обработчики событий для фильтров
             searchInput.addEventListener('input', filterTasks);
             serviceFilter.addEventListener('change', filterTasks);
+
+            // Переключатель вида
+            viewToggle.addEventListener('click', function() {
+                isGridView = !isGridView;
+                filterTasks();
+            });
+
+            // Кнопка загрузки CSV
+            downloadCsvButton.addEventListener('click', function() {
+                downloadCSV(data);
+            });
         });
 });

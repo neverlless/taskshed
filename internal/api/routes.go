@@ -8,19 +8,21 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func InitRoutes() *mux.Router {
+func InitRoutes(authEnabled bool) *mux.Router {
 	router := mux.NewRouter()
 
 	router.Use(loggingMiddleware)
 
-	router.HandleFunc("/", HomeHandler).Methods("GET")
-	router.HandleFunc("/calendar", CalendarHandler).Methods("GET")
-	router.HandleFunc("/tasks", CreateTask).Methods("POST")
-	router.HandleFunc("/tasks/{id}", UpdateTask).Methods("PUT")
-	router.HandleFunc("/tasks/{id}", DeleteTask).Methods("DELETE")
-	router.HandleFunc("/tasks", GetTasks).Methods("GET")
+	router.HandleFunc("/", CalendarHandler).Methods("GET")
+	router.HandleFunc("/tasks-view", TasksViewHandler).Methods("GET")
 
-	// Static files
+	api := router.PathPrefix("/api").Subrouter()
+	api.HandleFunc("/tasks", CreateTask).Methods("POST")
+	api.HandleFunc("/tasks/{id}", UpdateTask).Methods("PUT")
+	api.HandleFunc("/tasks/{id}", DeleteTask).Methods("DELETE")
+	api.HandleFunc("/tasks", GetTasks).Methods("GET")
+
+	// Сервинг статических файлов
 	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./web/static/"))))
 
 	return router
@@ -36,10 +38,10 @@ func loggingMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func HomeHandler(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "web/templates/index.html")
-}
-
 func CalendarHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "web/templates/calendar.html")
+}
+
+func TasksViewHandler(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "web/templates/tasks-view.html")
 }

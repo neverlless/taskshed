@@ -12,7 +12,7 @@ body {
 
 header {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     margin-bottom: 20px;
 }
@@ -25,7 +25,8 @@ h1 {
 
 nav {
     display: flex;
-    gap: 10px;
+    gap: 20px;
+    justify-content: center;
 }
 
 nav a {
@@ -45,7 +46,9 @@ nav a:hover {
 
 #filters {
     display: flex;
+    justify-content: center;
     gap: 10px;
+    margin-bottom: 20px;
 }
 
 #search,
@@ -57,9 +60,25 @@ nav a:hover {
     border-radius: 5px;
 }
 
+.action-button {
+    padding: 10px 20px;
+    border: 1px solid #333;
+    background-color: #1f1f1f;
+    color: #ffffff;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.action-button:hover {
+    background-color: #bb86fc;
+    color: #121212;
+}
+
 #task-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
     gap: 20px;
 }
 
@@ -70,6 +89,8 @@ nav a:hover {
     border-radius: 10px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
     transition: background-color 0.3s, color 0.3s;
+    width: calc(100% - 40px);
+    max-width: 600px;
 }
 
 .task:hover {
@@ -91,17 +112,77 @@ nav a:hover {
     margin: 5px 0;
 }
 
-button#today-button {
-    padding: 10px 20px;
-    border: none;
+.task-table-container {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.task-table {
+    width: 100%;
+    max-width: 1200px;
+    border-collapse: collapse;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.task-table th,
+.task-table td {
+    border: 1px solid #333;
+    padding: 10px;
+    text-align: left;
+}
+
+.task-table th {
+    background-color: #1f1f1f;
+    color: #bb86fc;
+}
+
+.task-table tbody tr:hover {
     background-color: #bb86fc;
     color: #121212;
+}
+
+.download-button {
+    padding: 10px 20px;
+    border: 1px solid #333;
+    background-color: #1f1f1f;
+    color: #ffffff;
     border-radius: 5px;
     cursor: pointer;
     transition: background-color 0.3s, color 0.3s;
+    margin-left: 10px;
 }
 
-button#today-button:hover {
-    background-color: #121212;
+.download-button:hover {
+    background-color: #bb86fc;
+    color: #121212;
+}
+
+.fc-event {
+    white-space: normal;
+}
+
+.fc-header-toolbar {
+    background-color: #333;
+    color: #fff;
+}
+
+.fc-day-header {
+    background-color: #1f1f1f;
     color: #bb86fc;
+    padding: 10px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.fc-scrollgrid-sync-inner {
+    background-color: #333;
+    color: #fff;
+}
+
+.fc-timegrid-event {
+    white-space: normal;
+    overflow: hidden;
 }

@@ -54,7 +54,7 @@ func main() {
 	database.IsPostgres = isPostgres
 
 	// API initialization
-	router := api.InitRoutes()
+	router := api.InitRoutes(true)
 
 	// Server start
 	addr := fmt.Sprintf(":%s", *port)
