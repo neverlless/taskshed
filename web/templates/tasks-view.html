@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task View</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="icon" href="/static/images/favicon.ico" type="image/x-icon">
+</head>
+
+<body>
+    <div id="app">
+        <header>
+            <nav>
+                <a href="/">Calendar</a>
+                <a href="/tasks-view">Task View</a>
+            </nav>
+        </header>
+        <div id="filters">
+            <input type="text" id="search" placeholder="Search tasks...">
+            <select id="service-filter">
+                <option value="">All Services</option>
+            </select>
+            <button id="view-toggle" class="action-button">Toggle View</button>
+            <button id="download-csv" class="download-button">Download CSV</button>
+        </div>
+        <main>
+            <div id="task-list"></div>
+        </main>
+    </div>
+    <script src="/static/js/script.js"></script>
+</body>
+
+</html>
