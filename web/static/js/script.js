@@ -8,6 +8,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const viewToggle = document.getElementById('view-toggle');
             const downloadCsvButton = document.getElementById('download-csv');
             let isGridView = true;
+            let currentSortColumn = '';
+            let currentSortOrder = '';
 
             // Заполнить фильтр сервисов
             const services = [...new Set(data.map(task => task.service))];
@@ -55,13 +57,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 table.innerHTML = `
                     <thead>
                         <tr>
-                            <th>Name</th>
-                            <th>Service</th>
-                            <th>Time</th>
-                            <th>Days of Week</th>
-                            <th>Is Recurring</th>
-                            <th>Description</th>
-                            <th>Hosts</th>
+                            <th data-column="name">Name</th>
+                            <th data-column="service">Service</th>
+                            <th data-column="time">Time</th>
+                            <th data-column="days_of_week">Days of Week</th>
+                            <th data-column="is_recurring">Is Recurring</th>
+                            <th data-column="description">Description</th>
+                            <th data-column="hosts">Hosts</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -82,6 +84,33 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 container.appendChild(table);
                 taskList.appendChild(container);
+
+                // Добавить обработчики событий для сортировки
+                const headers = table.querySelectorAll('th');
+                headers.forEach(header => {
+                    header.addEventListener('click', () => {
+                        const column = header.getAttribute('data-column');
+                        if (currentSortColumn === column) {
+                            currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+                        } else {
+                            currentSortColumn = column;
+                            currentSortOrder = 'asc';
+                        }
+                        headers.forEach(h => h.classList.remove('sorted-asc', 'sorted-desc'));
+                        header.classList.add(currentSortOrder === 'asc' ? 'sorted-asc' : 'sorted-desc');
+                        sortTasks(tasks, column, currentSortOrder);
+                        displayTasksList(tasks);
+                    });
+                });
+            }
+
+            // Функция для сортировки задач
+            function sortTasks(tasks, column, order) {
+                tasks.sort((a, b) => {
+                    if (a[column] < b[column]) return order === 'asc' ? -1 : 1;
+                    if (a[column] > b[column]) return order === 'asc' ? 1 : -1;
+                    return 0;
+                });
             }
 
             // Функция для загрузки задач в CSV
