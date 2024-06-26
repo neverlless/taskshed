@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function() {
             function generateTaskColors(tasks) {
                 const colors = {};
                 const colorPalette = [
-                    '#FF5733', '#33FF57', '#3357FF', '#FF33A1', '#FF8C33', '#8C33FF', '#33FFBD', '#FF5733', '#33A1FF', '#FF33A1'
+                    '#FF5733', '#3357FF', '#FF33A1', '#FF8C33', '#8C33FF', '#FF5733', '#33A1FF', '#FF33A1', '#3f0d88', '#ab7af2'
                 ];
                 let colorIndex = 0;
 
