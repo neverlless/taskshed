@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     return {
                         html: `<div style="background-color: ${taskColors[info.event.title]}; padding: 5px; border-radius: 5px; white-space: normal; overflow: hidden;">
                                 <span>${info.timeText} ${info.event.title}</span>
-                              </div>`
+                            </div>`
                     };
                 },
                 slotMinTime: '00:00:00',

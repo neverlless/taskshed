@@ -22,7 +22,7 @@ func InitRoutes(authEnabled bool) *mux.Router {
 	api.HandleFunc("/tasks/{id}", DeleteTask).Methods("DELETE")
 	api.HandleFunc("/tasks", GetTasks).Methods("GET")
 
-	// Сервинг статических файлов
+	// Static files
 	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./web/static/"))))
 
 	return router

@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
             let currentSortColumn = '';
             let currentSortOrder = '';
 
-            // Заполнить фильтр сервисов
+            // Populate service filter
             const services = [...new Set(data.map(task => task.service))];
             services.forEach(service => {
                 const option = document.createElement('option');
@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 serviceFilter.appendChild(option);
             });
 
-            // Функция для корректировки времени согласно временной зоне пользователя
+            // Function to convert time to user's timezone
             function convertToUserTimeZone(time) {
                 const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
                 const date = new Date(`1970-01-01T${time}Z`);
@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return date.toLocaleTimeString([], options);
             }
 
-            // Функция для отображения задач
+            // Function to display tasks in a grid
             function displayTasks(tasks) {
                 taskList.innerHTML = '';
                 tasks.forEach(task => {
@@ -48,16 +48,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
 
-            // Функция для расчета времени окончания задачи
+            // Function to get end time of a task
             function getEndTime(startTime, duration) {
                 const [startHours, startMinutes] = startTime.split(':').map(Number);
                 const [durationHours, durationMinutes] = duration.split(':').map(Number);
                 const endDate = new Date();
                 endDate.setHours(startHours + durationHours, startMinutes + durationMinutes, 0, 0);
-                return endDate.toTimeString().slice(0, 5); // возвращаем только HH:MM
+                return endDate.toTimeString().slice(0, 5); // Returns 'HH:mm'
             }
 
-            // Функция для отображения задач в виде списка
+            // Function to display tasks in a table
             function displayTasksList(tasks) {
                 taskList.innerHTML = '';
                 const container = document.createElement('div');
@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 container.appendChild(table);
                 taskList.appendChild(container);
 
-                // Добавить обработчики событий для сортировки
+                // Add sorting functionality
                 const headers = table.querySelectorAll('th');
                 headers.forEach(header => {
                     header.addEventListener('click', () => {
@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
 
-            // Функция для сортировки задач
+            // Function to sort tasks
             function sortTasks(tasks, column, order) {
                 tasks.sort((a, b) => {
                     if (a[column] < b[column]) return order === 'asc' ? -1 : 1;
@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
 
-            // Функция для загрузки задач в CSV
+            // Function for downloading tasks as CSV
             function downloadCSV(tasks) {
                 const csvContent = [
                     ['Name', 'Service', 'Time', 'Duration', 'End Time', 'Days of Week', 'Is Recurring', 'Description', 'Hosts'],
@@ -155,16 +155,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.body.removeChild(link);
             }
 
-            // Отображение всех задач при загрузке
+            // Display tasks
             displayTasks(data);
 
-            // Фильтрация задач
+            // Filter tasks
             function filterTasks() {
                 const searchText = searchInput.value.toLowerCase();
                 const selectedService = serviceFilter.value;
                 const filteredTasks = data.filter(task => {
                     return (task.name.toLowerCase().includes(searchText) || task.service.toLowerCase().includes(searchText)) &&
-                           (selectedService === '' || task.service === selectedService);
+                        (selectedService === '' || task.service === selectedService);
                 });
                 if (isGridView) {
                     displayTasks(filteredTasks);
@@ -173,17 +173,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
-            // Добавить обработчики событий для фильтров
+            // Add event listeners
             searchInput.addEventListener('input', filterTasks);
             serviceFilter.addEventListener('change', filterTasks);
 
-            // Переключатель вида
+            // View toggle button
             viewToggle.addEventListener('click', function() {
                 isGridView = !isGridView;
                 filterTasks();
             });
 
-            // Кнопка загрузки CSV
+            // Button to download tasks as CSV
             downloadCsvButton.addEventListener('click', function() {
                 downloadCSV(data);
             });
