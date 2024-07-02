@@ -94,6 +94,7 @@ TaskShed simplifies the management of distributed system schedules by providing 
         "name": "Backup Database",
         "service": "Database Service",
         "time": "03:00",
+        "duration": "01:30",
         "days_of_week": "Mon,Wed,Fri",
         "is_recurring": true,
         "description": "Daily backup of the database",
@@ -109,6 +110,7 @@ TaskShed simplifies the management of distributed system schedules by providing 
         "name": "Backup Database",
         "service": "Database Service",
         "time": "03:00",
+        "duration": "01:30",
         "days_of_week": "Mon,Wed,Fri",
         "is_recurring": true,
         "description": "Daily backup of the database",
@@ -126,6 +128,7 @@ TaskShed simplifies the management of distributed system schedules by providing 
         "name": "Backup Database",
         "service": "Database Service",
         "time": "03:00",
+        "duration": "01:30",
         "days_of_week": "Mon,Wed,Fri",
         "is_recurring": true,
         "description": "Daily backup of the database",
@@ -141,6 +144,7 @@ TaskShed simplifies the management of distributed system schedules by providing 
         "name": "Backup Database",
         "service": "Database Service",
         "time": "03:00",
+        "duration": "01:30",
         "days_of_week": "Mon,Wed,Fri",
         "is_recurring": true,
         "description": "Daily backup of the database",
@@ -153,7 +157,7 @@ TaskShed simplifies the management of distributed system schedules by providing 
 - Endpoint: DELETE `/api/tasks/{id}`
 - Response Body: 204 No Content
 
-### Get Task
+### Get Tasks
 
 - Endpoint: GET `/api/tasks`
 - Response Body:
@@ -165,6 +169,7 @@ TaskShed simplifies the management of distributed system schedules by providing 
             "name": "Backup Database",
             "service": "Database Service",
             "time": "03:00",
+            "duration": "01:30",
             "days_of_week": "Mon,Wed,Fri",
             "is_recurring": true,
             "description": "Daily backup of the database",
@@ -188,6 +193,7 @@ TaskShed simplifies the management of distributed system schedules by providing 
         "name": "Backup Database",
         "service": "Database Service",
         "time": "03:00",
+        "duration": "01:30",
         "days_of_week": "Mon,Wed,Fri",
         "is_recurring": true,
         "description": "Daily backup of the database",
@@ -202,10 +208,11 @@ TaskShed simplifies the management of distributed system schedules by providing 
         "name": "Backup Database",
         "service": "Database Service",
         "time": "03:00",
+        "duration": "01:30",
         "days_of_week": "Mon,Wed,Fri",
         "is_recurring": true,
         "description": "Daily backup of the database",
-        "hosts": "host1"
+        "hosts": "host1,host2"
     }'
     ```
 
@@ -215,7 +222,7 @@ TaskShed simplifies the management of distributed system schedules by providing 
     curl -X DELETE http://localhost:8080/api/tasks/1
     ```
 
-- Get Task:
+- Get Tasks:
 
     ```sh
     curl http://localhost:8080/api/tasks
