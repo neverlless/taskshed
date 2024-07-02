@@ -1,11 +1,12 @@
 document.addEventListener('DOMContentLoaded', function() {
     fetch('/api/tasks')
         .then(response => response.json())
-        .then(data => {
+        .then(tasks => {
             const calendarEl = document.getElementById('calendar');
-            const taskColors = generateTaskColors(data);
+            const taskColors = generateTaskColors(tasks);
 
             const calendar = new FullCalendar.Calendar(calendarEl, {
+                timeZone: 'local',  // Ensuring that the calendar uses the local timezone
                 initialView: 'dayGridMonth',
                 headerToolbar: {
                     left: 'prev,next today',
@@ -13,16 +14,22 @@ document.addEventListener('DOMContentLoaded', function() {
                     right: 'dayGridMonth,timeGridWeek,timeGridDay'
                 },
                 height: 'auto',
-                events: generateEvents(data),
-                eventTimeFormat: { // like '14:30'
+                events: generateEvents(tasks),
+                eventTimeFormat: {
                     hour: '2-digit',
                     minute: '2-digit',
                     hour12: false
                 },
+                displayEventTime: true,
+                displayEventEnd: true,
+                forceEventDuration: false,  // Ensure all events have a duration
+                defaultTimedEventDuration: '01:00',  // Default duration for events without an end time
+                eventDisplay: "block",
                 eventContent: function(info) {
+                    const endTimeText = info.event.end ? ` - ${info.event.end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}` : '';
                     return {
                         html: `<div style="background-color: ${taskColors[info.event.title]}; padding: 5px; border-radius: 5px; white-space: normal; overflow: hidden;">
-                                <span>${info.timeText} - ${info.event.title}</span>
+                                <span>${info.timeText} ${info.event.title}</span>
                               </div>`
                     };
                 },
@@ -30,10 +37,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 slotMaxTime: '24:00:00',
                 expandRows: true,
                 dayMaxEventRows: true,
-                dayMaxEvents: 3, // ограничение на количество отображаемых событий в ячейке
+                dayMaxEvents: 3,
                 views: {
                     dayGridMonth: {
-                        dayMaxEventRows: 3 // ограничение на количество отображаемых событий в ячейке для месячного представления
+                        dayMaxEventRows: 3,
+                        displayEventEnd: true
+                    },
+                    timeGridWeek: {
+                        displayEventEnd: true
+                    },
+                    timeGridDay: {
+                        displayEventEnd: true
                     }
                 }
             });
@@ -59,56 +73,99 @@ document.addEventListener('DOMContentLoaded', function() {
 
             function generateEvents(tasks) {
                 const events = [];
+                const defaultDuration = '01:00'; // Default duration of 1 hour
+
                 tasks.forEach(task => {
-                    if (task.is_recurring) {
-                        const daysOfWeek = task.days_of_week.split(',').map(day => day.trim().toLowerCase());
-                        const dayMap = {
-                            "sun": 0,
-                            "mon": 1,
-                            "tue": 2,
-                            "wed": 3,
-                            "thu": 4,
-                            "fri": 5,
-                            "sat": 6
-                        };
-                        daysOfWeek.forEach(day => {
-                            const dayIndex = dayMap[day];
-                            if (dayIndex !== undefined) {
-                                events.push({
-                                    title: task.name,
-                                    startRecur: new Date(),
-                                    endRecur: new Date(new Date().getFullYear() + 1, 11, 31), // повторяется до конца года
-                                    daysOfWeek: [dayIndex],
-                                    startTime: convertToUserTimeZone(task.time),
-                                    description: task.description,
-                                    extendedProps: {
-                                        service: task.service,
-                                        isRecurring: task.is_recurring
-                                    }
-                                });
-                            }
-                        });
-                    } else {
-                        events.push({
-                            title: task.name,
-                            start: getTaskStartDate(task),
-                            allDay: false,
-                            description: task.description,
-                            extendedProps: {
-                                service: task.service,
-                                isRecurring: task.is_recurring
-                            }
-                        });
+                    if (!task.time || !task.name) {
+                        console.error(`Skipping task due to missing required properties: ${JSON.stringify(task)}`);
+                        return;
                     }
+
+                    const startTime = convertToUserTimeZone(task.time);
+                    const endTime = task.duration ? convertToUserTimeZone(getTaskEndTime(task.time, task.duration)) : convertToUserTimeZone(getTaskEndTime(task.time, defaultDuration));
+
+                    const event = {
+                        title: task.name,
+                        start: startTime,
+                        end: endTime,
+                        allDay: false,
+                        extendedProps: {
+                            service: task.service,
+                            isRecurring: task.is_recurring
+                        }
+                    };
+
+                    if (task.is_recurring && task.days_of_week) {
+                        const daysOfWeek = parseDaysOfWeek(task.days_of_week);
+                        if (daysOfWeek.length > 0) {
+                            event.daysOfWeek = daysOfWeek;
+                            event.startTime = startTime; // 'HH:mm'
+                            event.endTime = endTime; // 'HH:mm'
+                            event.startRecur = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
+                            event.endRecur = new Date(new Date().getFullYear() + 1, 11, 31).toISOString().slice(0, 10); // 'YYYY-MM-DD'
+                        } else {
+                            console.error(`Invalid days_of_week for recurring task: ${task.days_of_week}`);
+                        }
+                    }
+
+                    console.log(`Generated event: ${JSON.stringify(event)}`);
+                    events.push(event);
                 });
                 return events;
             }
 
-            function getTaskStartDate(task) {
-                const [hours, minutes] = task.time.split(':');
+            function getTaskStartTime(time) {
+                return new Date().toISOString().slice(0, 11) + time + ":00Z"; // Combines current date with time and sets as UTC
+            }
+
+            function getTaskEndTime(startTime, duration) {
+                const [hours, minutes] = startTime.split(':').map(Number);
+                const [durHours, durMinutes] = duration.split(':').map(Number);
                 const date = new Date();
-                date.setHours(hours, minutes, 0, 0);
-                return date;
+                date.setUTCHours(hours + durHours, minutes + durMinutes, 0, 0);
+                return date.toISOString().slice(11, 16); // returns 'HH:mm'
+            }
+
+            function parseDaysOfWeek(days) {
+                const dayMap = {
+                    "sun": 0, "mon": 1, "tue": 2, "wed": 3, "thu": 4, "fri": 5, "sat": 6
+                };
+                return days.split(',').map(day => dayMap[day.trim().toLowerCase()]).filter(day => day !== undefined);
+            }
+
+            function getTaskStartDate(time) {
+                try {
+                    const [hours, minutes] = time.split(':').map(Number);
+                    if (isNaN(hours) || isNaN(minutes)) {
+                        console.error(`Invalid start time format: ${time}`);
+                        return null;
+                    }
+                    const date = new Date();
+                    date.setUTCHours(hours, minutes, 0, 0);
+                    return date;
+                } catch (error) {
+                    console.error(`Error in getTaskStartDate: ${error.message}`);
+                    return null;
+                }
+            }
+
+            function getTaskEndDate(startTime, duration) {
+                try {
+                    const [startHours, startMinutes] = startTime.split(':').map(Number);
+                    const [durationHours, durationMinutes] = duration.split(':').map(Number);
+                    if (isNaN(startHours) || isNaN(startMinutes) || isNaN(durationHours) || isNaN(durationMinutes)) {
+                        console.error(`Invalid time or duration format: startTime=${startTime}, duration=${duration}`);
+                        return null;
+                    }
+                    const startDate = new Date();
+                    startDate.setUTCHours(startHours, startMinutes, 0, 0);
+                    const endDate = new Date(startDate);
+                    endDate.setUTCHours(startDate.getUTCHours() + durationHours, startDate.getUTCMinutes() + durationMinutes);
+                    return endDate.toISOString();
+                } catch (error) {
+                    console.error(`Error in getTaskEndDate: ${error.message}`);
+                    return null;
+                }
             }
 
             function convertToUserTimeZone(time) {

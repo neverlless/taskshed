@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
             function convertToUserTimeZone(time) {
                 const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
                 const date = new Date(`1970-01-01T${time}Z`);
-                const options = { timeZone: userTimeZone, hour: '2-digit', minute: '2-digit' };
+                const options = { timeZone: userTimeZone, hour: '2-digit', minute: '2-digit', hour12: false };
                 return date.toLocaleTimeString([], options);
             }
 
@@ -38,6 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <h2>${task.name}</h2>
                         <p><strong>Service:</strong> ${task.service}</p>
                         <p><strong>Time:</strong> ${convertToUserTimeZone(task.time)}</p>
+                        ${task.duration ? `<p><strong>Duration:</strong> ${task.duration}</p><p><strong>End Time:</strong> ${convertToUserTimeZone(getEndTime(task.time, task.duration))}</p>` : ''}
                         <p><strong>Days of Week:</strong> ${task.days_of_week}</p>
                         <p><strong>Is Recurring:</strong> ${task.is_recurring}</p>
                         <p><strong>Description:</strong> ${task.description}</p>
@@ -45,6 +46,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     `;
                     taskList.appendChild(taskDiv);
                 });
+            }
+
+            // Функция для расчета времени окончания задачи
+            function getEndTime(startTime, duration) {
+                const [startHours, startMinutes] = startTime.split(':').map(Number);
+                const [durationHours, durationMinutes] = duration.split(':').map(Number);
+                const endDate = new Date();
+                endDate.setHours(startHours + durationHours, startMinutes + durationMinutes, 0, 0);
+                return endDate.toTimeString().slice(0, 5); // возвращаем только HH:MM
             }
 
             // Функция для отображения задач в виде списка
@@ -60,6 +70,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             <th data-column="name">Name</th>
                             <th data-column="service">Service</th>
                             <th data-column="time">Time</th>
+                            <th data-column="duration">Duration</th>
+                            <th data-column="end_time">End Time</th>
                             <th data-column="days_of_week">Days of Week</th>
                             <th data-column="is_recurring">Is Recurring</th>
                             <th data-column="description">Description</th>
@@ -75,6 +87,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         <td>${task.name}</td>
                         <td>${task.service}</td>
                         <td>${convertToUserTimeZone(task.time)}</td>
+                        <td>${task.duration || ''}</td>
+                        <td>${task.duration ? convertToUserTimeZone(getEndTime(task.time, task.duration)) : ''}</td>
                         <td>${task.days_of_week}</td>
                         <td>${task.is_recurring}</td>
                         <td>${task.description}</td>
@@ -116,11 +130,13 @@ document.addEventListener('DOMContentLoaded', function() {
             // Функция для загрузки задач в CSV
             function downloadCSV(tasks) {
                 const csvContent = [
-                    ['Name', 'Service', 'Time', 'Days of Week', 'Is Recurring', 'Description', 'Hosts'],
+                    ['Name', 'Service', 'Time', 'Duration', 'End Time', 'Days of Week', 'Is Recurring', 'Description', 'Hosts'],
                     ...tasks.map(task => [
                         task.name,
                         task.service,
                         convertToUserTimeZone(task.time),
+                        task.duration || '',
+                        task.duration ? convertToUserTimeZone(getEndTime(task.time, task.duration)) : '',
                         task.days_of_week,
                         task.is_recurring,
                         task.description,

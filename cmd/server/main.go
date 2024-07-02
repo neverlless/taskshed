@@ -53,6 +53,17 @@ func main() {
 	// Set database type
 	database.IsPostgres = isPostgres
 
+	// Migrate database
+	err = database.MigrateDatabase()
+	if err != nil {
+		logger.Log.WithFields(logrus.Fields{
+			"level":  "error",
+			"ts":     time.Now().Format(time.RFC3339Nano),
+			"caller": "main.go:55",
+			"msg":    fmt.Sprintf("Failed to migrate database: %v", err),
+		}).Fatal(err)
+	}
+
 	// API initialization
 	router := api.InitRoutes(true)
 
