@@ -28,6 +28,7 @@ LABEL org.opencontainers.image.title="taskshed" \
       org.opencontainers.image.description="Centralized view of scheduled tasks across distributed systems" \
       org.opencontainers.image.source="https://github.com/neverlless/taskshed" \
       org.opencontainers.image.url="https://github.com/neverlless/taskshed" \
+      org.opencontainers.image.licenses="Apache-2.0" \
       org.opencontainers.image.version="${VERSION}"
 
 COPY --from=builder /out/taskshed /taskshed
