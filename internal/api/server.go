@@ -20,7 +20,8 @@ import (
 
 const (
 	maxBodyBytes = 1 << 20
-	pageCSP      = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
+	// FullCalendar injects its icon font as a data: URL.
+	pageCSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
 )
 
 type Options struct {
