@@ -1,0 +1,13 @@
+.git
+.github
+.claude
+.playwright-mcp
+dist
+*.db
+*.db-*
+*.log
+.DS_Store
+taskshed
+Dockerfile
+.dockerignore
+README.md

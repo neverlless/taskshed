@@ -1,0 +1,49 @@
+# SQLite (default):     docker compose up -d
+# PostgreSQL (POSTGRES_PASSWORD is required): DB_TYPE=postgres POSTGRES_PASSWORD=change-me docker compose --profile postgres up -d
+services:
+  taskshed:
+    image: neverlless/taskshed:latest
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      API_TOKEN: ${API_TOKEN:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      DB_TYPE: ${DB_TYPE:-sqlite}
+      DB_HOST: postgres
+      DB_USER: taskshed
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-}
+      DB_NAME: taskshed
+    volumes:
+      - taskshed-data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+        required: false # only when the postgres profile is enabled
+    healthcheck:
+      test: ["CMD", "/taskshed", "-healthcheck"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+  postgres:
+    image: postgres:18.6-alpine3.24@sha256:10a5c69a83035ab5239f5620d708520e8b28f5aa1f2b20143e6024532edadfb5
+    profiles: [postgres]
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: taskshed
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
+      POSTGRES_DB: taskshed
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taskshed -d taskshed"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  taskshed-data:
+  postgres-data:

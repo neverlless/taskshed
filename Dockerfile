@@ -1,24 +1,44 @@
-FROM golang:1.22.3-alpine AS builder
+# syntax=docker/dockerfile:1
 
-RUN apk update && apk add --no-cache gcc musl-dev
+FROM --platform=$BUILDPLATFORM golang:1.27.3-alpine3.24@sha256:d200d2dd76b03a99b52651fd1325aff7dcd35422c35c01bac56571b0507f3deb AS builder
 
-WORKDIR /app
+ARG TARGETOS
+ARG TARGETARCH
+ARG VERSION=dev
+
+WORKDIR /src
 
 COPY go.mod go.sum ./
-RUN go mod download
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go mod download
 
 COPY . .
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
+    go build -trimpath -ldflags "-s -w -X main.version=${VERSION}" -o /out/taskshed ./cmd/server
 
-RUN CGO_ENABLED=1 GOOS=linux go build -o taskshed cmd/server/main.go
+# distroless has no shell, so the data dir is prepared here
+RUN mkdir -p /out/data
 
-FROM alpine:3.20.0
+FROM gcr.io/distroless/static-debian13:nonroot@sha256:18f4cc26c9ffa7f20a359298be7deadac5c607c8e03a02b8119f1a5fc2f82c99
 
-WORKDIR /app
+ARG VERSION=dev
+LABEL org.opencontainers.image.title="taskshed" \
+      org.opencontainers.image.description="Centralized view of scheduled tasks across distributed systems" \
+      org.opencontainers.image.source="https://github.com/neverlless/taskshed" \
+      org.opencontainers.image.url="https://github.com/neverlless/taskshed" \
+      org.opencontainers.image.version="${VERSION}"
 
-COPY --from=builder /app/taskshed /app/taskshed
+COPY --from=builder /out/taskshed /taskshed
+COPY --from=builder --chown=65532:65532 /out/data /data
 
-COPY --from=builder /app/web /app/web
-
+ENV DB_PATH=/data/taskshed.db
+VOLUME /data
 EXPOSE 8080
 
-CMD ["/app/taskshed"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD ["/taskshed", "-healthcheck"]
+
+USER nonroot:nonroot
+ENTRYPOINT ["/taskshed"]
