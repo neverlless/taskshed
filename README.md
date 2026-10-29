@@ -5,7 +5,7 @@ A single place to see when scheduled jobs run across your systems.
 [![CI](https://github.com/neverlless/taskshed/actions/workflows/ci.yml/badge.svg)](https://github.com/neverlless/taskshed/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/neverlless/taskshed)](https://github.com/neverlless/taskshed/releases/latest)
 [![Go version](https://img.shields.io/github/go-mod/go-version/neverlless/taskshed)](go.mod)
-[![Docker pulls](https://img.shields.io/docker/pulls/neverlless/taskshed)](https://hub.docker.com/r/neverlless/taskshed)
+[![Container image](https://img.shields.io/badge/image-ghcr.io-2496ED?logo=docker&logoColor=white)](https://github.com/neverlless/taskshed/pkgs/container/taskshed)
 [![License](https://img.shields.io/github/license/neverlless/taskshed)](LICENSE)
 
 TaskShed is a small web app and REST API for recording scheduled tasks (backups, cron jobs, maintenance windows) and seeing them on one weekly calendar. You register tasks through the API or the UI; TaskShed does not run them. It ships as a single static binary with the UI embedded, and stores data in SQLite or PostgreSQL.
@@ -68,7 +68,7 @@ docker run -d --name taskshed \
   -p 8080:8080 \
   -v taskshed-data:/data \
   -e API_TOKEN=change-me \
-  neverlless/taskshed:latest
+  ghcr.io/neverlless/taskshed:latest
 ```
 
 The image runs as a non-root user and keeps the SQLite database in the `/data` volume.

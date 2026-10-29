@@ -2,7 +2,7 @@
 # PostgreSQL (POSTGRES_PASSWORD is required): DB_TYPE=postgres POSTGRES_PASSWORD=change-me docker compose --profile postgres up -d
 services:
   taskshed:
-    image: neverlless/taskshed:latest
+    image: ghcr.io/neverlless/taskshed:latest
     build: .
     restart: unless-stopped
     ports:
