@@ -12,6 +12,14 @@ linters:
     - noctx
     - staticcheck
     - unused
+  exclusions:
+    # Unchecked Close/Rollback/Write in defers and handlers is idiomatic.
+    presets:
+      - std-error-handling
+    rules:
+      - path: _test\.go
+        linters:
+          - noctx
 
 formatters:
   enable:

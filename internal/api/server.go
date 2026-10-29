@@ -7,6 +7,7 @@ import (
 	"crypto/subtle"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/fs"
 	"log/slog"
 	"net/http"
@@ -130,10 +131,10 @@ func (s *server) healthz(w http.ResponseWriter, r *http.Request) {
 	if err := s.store.Ping(ctx); err != nil {
 		s.log.Error("health check failed", "err", err)
 		w.WriteHeader(http.StatusServiceUnavailable)
-		w.Write([]byte("unavailable"))
+		fmt.Fprint(w, "unavailable")
 		return
 	}
-	w.Write([]byte("ok"))
+	fmt.Fprint(w, "ok")
 }
 
 func page(name string) http.HandlerFunc {
@@ -201,7 +202,8 @@ func (s *server) internalError(w http.ResponseWriter, r *http.Request, err error
 func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(v)
+	// Headers are already sent, so an encode error (client gone) has nowhere to go.
+	_ = json.NewEncoder(w).Encode(v)
 }
 
 func writeError(w http.ResponseWriter, status int, msg string) {
@@ -240,7 +242,7 @@ func (s *server) recoverPanics(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if v := recover(); v != nil {
-				if v == http.ErrAbortHandler {
+				if err, ok := v.(error); ok && errors.Is(err, http.ErrAbortHandler) {
 					panic(v)
 				}
 				s.log.Error("panic", "method", r.Method, "path", r.URL.Path, "panic", v)

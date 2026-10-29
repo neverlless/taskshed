@@ -61,7 +61,7 @@ func (s *Store) applyMigration(ctx context.Context, version int, m func(context.
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }() // no-op after Commit
 	if err := m(ctx, tx, s.postgres); err != nil {
 		return err
 	}

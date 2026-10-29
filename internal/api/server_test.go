@@ -90,7 +90,9 @@ func TestErrors(t *testing.T) {
 	for _, tt := range tests {
 		rec := do(t, h, tt.method, tt.path, tt.body)
 		var body struct{ Error string }
-		json.Unmarshal(rec.Body.Bytes(), &body)
+		if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+			t.Fatalf("%s %s: body %q is not JSON: %v", tt.method, tt.path, rec.Body, err)
+		}
 		if rec.Code != tt.status || body.Error != tt.msg || rec.Header().Get("Content-Type") != "application/json" {
 			t.Errorf("%s %s = %d %q; want %d %q", tt.method, tt.path, rec.Code, body.Error, tt.status, tt.msg)
 		}
