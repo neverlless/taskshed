@@ -203,6 +203,12 @@ select,
     padding: 7px 12px;
 }
 
+/* Browser default placeholder grey is under 4.5:1 on the dark surface. */
+::placeholder {
+    color: var(--muted);
+    opacity: 1;
+}
+
 #search {
     flex: 1 1 260px;
     max-width: 360px;
@@ -513,6 +519,32 @@ th[aria-sort="descending"] .sort {
     font-size: 14px;
     text-transform: none;
     box-shadow: none;
+}
+
+/* FullCalendar sets outline: 0 on its buttons; restore the shared focus ring. */
+#calendar .fc-button:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+    z-index: 2;
+}
+
+/* FullCalendar's icon font is a data: URI, which the CSP (font-src 'self') blocks; draw its icons as text instead. */
+#calendar .fc-icon {
+    font-family: inherit !important;
+    font-size: 1.25em;
+    line-height: 0.8;
+}
+
+#calendar .fc-icon-chevron-left::before {
+    content: "‹";
+}
+
+#calendar .fc-icon-chevron-right::before {
+    content: "›";
+}
+
+#calendar .fc-icon-x::before {
+    content: "×";
 }
 
 #calendar .fc-button-primary:not(:disabled).fc-button-active {

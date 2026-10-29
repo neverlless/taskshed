@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             ? [el('span', { className: 'seg point', style: { left: percent(loc.start) } })]
             : [
                 el('span', { className: 'seg', style: { left: percent(loc.start), width: percent(Math.min(loc.end, DAY_MINUTES) - loc.start) } }),
-                loc.end > DAY_MINUTES && el('span', { className: 'seg', style: { left: '0', width: percent(loc.end - DAY_MINUTES) } }),
+                loc.end > DAY_MINUTES && el('span', { className: 'seg', style: { left: '0', width: percent(Math.min(loc.end - DAY_MINUTES, DAY_MINUTES)) } }),
             ];
         return [
             el('div', { className: 'window-text' }, text),
