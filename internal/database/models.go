@@ -10,4 +10,5 @@ type Task struct {
 	IsRecurring bool   `json:"is_recurring"`
 	Description string `json:"description,omitempty"`
 	Hosts       string `json:"hosts,omitempty"`
+	Date        string `json:"date,omitempty"` // YYYY-MM-DD (UTC) of a one-off task
 }
