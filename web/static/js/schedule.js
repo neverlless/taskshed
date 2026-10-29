@@ -16,6 +16,16 @@ const pad = n => String(n).padStart(2, '0');
 const formatHM = min => `${pad(Math.floor(mod(min, DAY_MINUTES) / 60))}:${pad(mod(min, 60))}`;
 // Duration-style time that may exceed 24:00, as FullCalendar's endTime expects for windows past midnight.
 const formatSpan = min => `${pad(Math.floor(min / 60))}:${pad(min % 60)}`;
+// Local calendar date of a dated one-off; en-GB to match the English UI ("Thu, 5 Nov 2026").
+const formatDate = date => new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).format(date);
+
+// "22:00–02:00"; windows of a day or more also say how many days later they end, which the clock times alone hide.
+function formatWindow(loc) {
+    if (loc.end === null) return `${formatHM(loc.start)}, no set duration`;
+    const laterDays = Math.floor(loc.end / DAY_MINUTES);
+    const suffix = loc.duration >= DAY_MINUTES ? ` (ends ${laterDays} day${laterDays === 1 ? '' : 's'} later)` : '';
+    return `${formatHM(loc.start)}–${formatHM(loc.end)}${suffix}`;
+}
 
 function localizeTask(task) {
     const utcStart = parseHM(task.time);
@@ -29,11 +39,22 @@ function localizeTask(task) {
         .map(d => DAY_KEYS.indexOf(d.trim().slice(0, 3).toLowerCase()))
         .filter(d => d >= 0)
         .map(d => mod(d + dayShift, 7)))];
-    return { start, end: duration ? start + duration : null, duration, days };
+    const loc = { start, end: duration ? start + duration : null, duration, days };
+    // A dated one-off runs once, so it gets exact Date bounds (DST-correct) instead of a weekly pattern.
+    const date = !task.is_recurring && /^\d{4}-\d{2}-\d{2}$/.test(task.date || '') ? Date.parse(`${task.date}T00:00:00Z`) : NaN;
+    if (!Number.isNaN(date)) {
+        loc.startDate = new Date(date + utcStart * 60000);
+        loc.endDate = duration ? new Date(loc.startDate.getTime() + duration * 60000) : null;
+        loc.start = loc.startDate.getHours() * 60 + loc.startDate.getMinutes();
+        loc.end = duration ? loc.start + duration : null;
+        loc.days = [];
+    }
+    return loc;
 }
 
 function isRunning(loc, now = new Date()) {
     if (!loc || loc.end === null) return false;
+    if (loc.startDate) return now >= loc.startDate && now < loc.endDate;
     const minute = now.getHours() * 60 + now.getMinutes();
     const today = now.getDay();
     return (loc.days.includes(today) && minute >= loc.start && minute < loc.end) ||
@@ -42,7 +63,10 @@ function isRunning(loc, now = new Date()) {
 
 async function fetchTasks() {
     const response = await fetch('/api/tasks');
-    if (!response.ok) throw new Error(`The server responded with ${response.status} ${response.statusText}.`);
+    if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.error ? `The server said: ${body.error}.` : `The server responded with ${response.status} ${response.statusText}.`);
+    }
     return (await response.json()) || [];
 }
 

@@ -19,21 +19,31 @@ document.addEventListener('DOMContentLoaded', async function() {
     legendEl.replaceChildren(...services.map(service =>
         el('li', {}, el('span', { className: 'swatch', style: { background: colorOf(service) } }), service)));
 
+    let undated = 0;
     const events = tasks.flatMap(task => {
         const loc = localizeTask(task);
-        // One-off tasks carry no date, so there is no day to place them on.
-        if (!loc || !task.is_recurring || loc.days.length === 0) return [];
+        if (!loc) return [];
+        // One-off tasks without a date have no day to be placed on.
+        if (!loc.startDate && !task.is_recurring) undated++;
+        if (!loc.startDate && (!task.is_recurring || loc.days.length === 0)) return [];
+        const timing = loc.startDate
+            ? { start: loc.startDate, end: loc.endDate ?? new Date(loc.startDate.getTime() + 3600000) }
+            : { daysOfWeek: loc.days, startTime: formatSpan(loc.start), endTime: formatSpan(loc.end ?? loc.start + 60) };
         return [{
             title: task.name,
-            daysOfWeek: loc.days,
-            startTime: formatSpan(loc.start),
-            endTime: formatSpan(loc.end ?? loc.start + 60),
+            ...timing,
             backgroundColor: colorOf(task.service),
             borderColor: colorOf(task.service),
             textColor: '#141A22',
             extendedProps: { task, loc },
         }];
     });
+
+    if (undated > 0) {
+        legendEl.after(el('p', { className: 'legend-note' },
+            undated === 1 ? '1 one-off task has no date and is only listed on the ' : `${undated} one-off tasks have no date and are only listed on the `,
+            el('a', { href: '/tasks-view' }, 'Tasks page'), '.'));
+    }
 
     if (tasks.length === 0) {
         showMessage(calendarEl, 'No tasks scheduled yet.', 'Register a task with POST /api/tasks, as described in the README, and it will appear here.');
@@ -62,8 +72,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         events,
         eventDidMount(info) {
             const { task, loc } = info.event.extendedProps;
-            const window = loc.end === null ? `${formatHM(loc.start)}, no set duration` : `${formatHM(loc.start)}–${formatHM(loc.end)}`;
-            info.el.title = [task.name, task.service, window, task.hosts && `Hosts: ${task.hosts}`, task.description]
+            const when = loc.startDate ? `One-off, ${formatDate(loc.startDate)}, ${formatWindow(loc)}` : formatWindow(loc);
+            info.el.title = [task.name, task.service, when, task.hosts && `Hosts: ${task.hosts.split(',').map(h => h.trim()).join(', ')}`, task.description]
                 .filter(Boolean).join('\n');
         },
     }).render();

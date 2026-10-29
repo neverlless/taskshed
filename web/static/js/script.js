@@ -91,7 +91,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                 task.description && el('div', { className: 'task-desc' }, task.description),
                 !task.is_recurring && el('div', { className: 'task-desc' }, 'One-off task')),
             el('td', { 'data-label': 'Service' }, task.service),
-            el('td', { 'data-label': 'Days' }, dayStrip(loc)),
+            el('td', { 'data-label': task.is_recurring ? 'Days' : 'Date' }, task.is_recurring ? dayStrip(loc)
+                : loc && loc.startDate ? formatDate(loc.startDate) : el('span', { className: 'task-desc' }, 'No date')),
             el('td', { className: 'cell-window', 'data-label': 'Window' }, windowCell(loc, nowMinute)),
             el('td', { className: 'cell-hosts', 'data-label': 'Hosts' }, (task.hosts || '—').split(',').map(h => h.trim()).join(', ')));
     }
@@ -105,7 +106,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     function windowCell(loc, nowMinute) {
         if (!loc) return el('span', { className: 'task-desc' }, 'Invalid time');
-        const text = loc.end === null ? `${formatHM(loc.start)}, no set duration` : `${formatHM(loc.start)}–${formatHM(loc.end)}`;
+        const text = formatWindow(loc);
         const percent = min => `${(min / DAY_MINUTES) * 100}%`;
         const segments = loc.end === null
             ? [el('span', { className: 'seg point', style: { left: percent(loc.start) } })]
@@ -139,9 +140,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         return `"${(/^[=+\-@]/.test(text) ? `'${text}` : text).replace(/"/g, '""')}"`;
     }
 
+    const isoDate = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
     function downloadCSV(rows) {
         const csvContent = [
-            ['Name', 'Service', 'Start (local)', 'Duration', 'End (local)', 'Days (local)', 'Recurring', 'Description', 'Hosts'],
+            ['Name', 'Service', 'Start (local)', 'Duration', 'End (local)', 'Days (local)', 'Date (local)', 'Recurring', 'Description', 'Hosts'],
             ...rows.map(task => [
                 task.name,
                 task.service,
@@ -149,6 +152,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 task.duration || '',
                 task.loc && task.loc.end !== null ? formatHM(task.loc.end) : '',
                 task.loc ? WEEK_ORDER.filter(d => task.loc.days.includes(d)).map(d => DAY_NAMES[d]).join(',') : task.days_of_week,
+                task.loc && task.loc.startDate ? isoDate(task.loc.startDate) : '',
                 task.is_recurring ? 'yes' : 'no',
                 task.description || '',
                 task.hosts || '',
