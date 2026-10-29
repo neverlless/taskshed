@@ -23,3 +23,9 @@ go.work.sum
 
 *.db
 *.log
+
+# Build output and local artifacts
+/taskshed
+dist/
+.DS_Store
+.playwright-mcp/
