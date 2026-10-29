@@ -4,31 +4,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Task View</title>
+    <title>TaskShed tasks</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
     <link rel="stylesheet" href="/static/css/styles.css">
     <link rel="icon" href="/static/images/favicon.ico" type="image/x-icon">
 </head>
 
 <body>
-    <div id="app">
-        <header>
-            <nav>
-                <a href="/">Calendar</a>
-                <a href="/tasks-view">Task View</a>
-            </nav>
-        </header>
-        <div id="filters">
-            <input type="text" id="search" placeholder="Search tasks...">
-            <select id="service-filter">
-                <option value="">All Services</option>
-            </select>
-            <button id="view-toggle" class="action-button">Toggle View</button>
-            <button id="download-csv" class="download-button">Download CSV</button>
+    <header class="topbar">
+        <a class="brand" href="/">TaskShed</a>
+        <nav aria-label="Main">
+            <a href="/">Calendar</a>
+            <a href="/tasks-view" aria-current="page">Tasks</a>
+        </nav>
+    </header>
+    <main>
+        <div class="page-head">
+            <h1>Scheduled tasks</h1>
+            <p class="tz" id="tz"></p>
         </div>
-        <main>
-            <div id="task-list"></div>
-        </main>
-    </div>
+        <div class="toolbar">
+            <label class="visually-hidden" for="search">Search tasks</label>
+            <input type="search" id="search" placeholder="Search by name, service or host" autocomplete="off">
+            <label class="visually-hidden" for="service-filter">Service</label>
+            <select id="service-filter">
+                <option value="">All services</option>
+            </select>
+            <span id="count" class="count" aria-live="polite"></span>
+            <button id="download-csv" class="button" type="button" disabled>Export CSV</button>
+        </div>
+        <div id="task-list"></div>
+    </main>
+    <script src="/static/js/schedule.js"></script>
     <script src="/static/js/script.js"></script>
 </body>
 

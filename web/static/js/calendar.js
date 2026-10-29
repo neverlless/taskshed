@@ -1,178 +1,70 @@
-document.addEventListener('DOMContentLoaded', function() {
-    fetch('/api/tasks')
-        .then(response => response.json())
-        .then(tasks => {
-            const calendarEl = document.getElementById('calendar');
-            const taskColors = generateTaskColors(tasks);
+document.addEventListener('DOMContentLoaded', async function() {
+    const calendarEl = document.getElementById('calendar');
+    const legendEl = document.getElementById('legend');
+    showTimezone();
 
-            const calendar = new FullCalendar.Calendar(calendarEl, {
-                timeZone: 'local',  // Ensuring that the calendar uses the local timezone
-                initialView: 'dayGridMonth',
-                headerToolbar: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
-                },
-                height: 'auto',
-                events: generateEvents(tasks),
-                eventTimeFormat: {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: false
-                },
-                displayEventTime: true,
-                displayEventEnd: true,
-                forceEventDuration: false,  // Ensure all events have a duration
-                defaultTimedEventDuration: '01:00',  // Default duration for events without an end time
-                eventDisplay: "block",
-                eventContent: function(info) {
-                    const endTimeText = info.event.end ? ` - ${info.event.end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}` : '';
-                    return {
-                        html: `<div style="background-color: ${taskColors[info.event.title]}; padding: 5px; border-radius: 5px; white-space: normal; overflow: hidden;">
-                                <span>${info.timeText} ${info.event.title}</span>
-                            </div>`
-                    };
-                },
-                slotMinTime: '00:00:00',
-                slotMaxTime: '24:00:00',
-                expandRows: true,
-                dayMaxEventRows: true,
-                dayMaxEvents: 3,
-                views: {
-                    dayGridMonth: {
-                        dayMaxEventRows: 3,
-                        displayEventEnd: true
-                    },
-                    timeGridWeek: {
-                        displayEventEnd: true
-                    },
-                    timeGridDay: {
-                        displayEventEnd: true
-                    }
-                }
-            });
+    let tasks;
+    try {
+        tasks = await fetchTasks();
+    } catch (error) {
+        showMessage(calendarEl, 'The schedule could not be loaded.', `${error.message} Check that the TaskShed server is running, then reload the page.`,
+            el('button', { className: 'button', type: 'button', onclick: () => location.reload() }, 'Reload'));
+        return;
+    }
 
-            calendar.render();
+    // Colour by service so related jobs read as a group; all hues are light enough for dark event text.
+    const palette = ['#8DB8F2', '#93D3A2', '#E9A6C9', '#C2AEF5', '#7FD4CF', '#F2AE8A', '#CFD879', '#B6C2D1'];
+    const services = [...new Set(tasks.map(task => task.service))].sort();
+    const colorOf = service => palette[services.indexOf(service) % palette.length];
+    legendEl.replaceChildren(...services.map(service =>
+        el('li', {}, el('span', { className: 'swatch', style: { background: colorOf(service) } }), service)));
 
-            function generateTaskColors(tasks) {
-                const colors = {};
-                const colorPalette = [
-                    '#FF5733', '#3357FF', '#FF33A1', '#FF8C33', '#8C33FF', '#8FBC8F', '#33A1FF', '#900C3F', '#ab7af2', '#C70039', '#B8860B', '#4682B4', '#8B008B', '#FF7F50', '#6495ED', '#FF00FF', '#FF69B4'
-                ];
-                let colorIndex = 0;
+    const events = tasks.flatMap(task => {
+        const loc = localizeTask(task);
+        // One-off tasks carry no date, so there is no day to place them on.
+        if (!loc || !task.is_recurring || loc.days.length === 0) return [];
+        return [{
+            title: task.name,
+            daysOfWeek: loc.days,
+            startTime: formatSpan(loc.start),
+            endTime: formatSpan(loc.end ?? loc.start + 60),
+            backgroundColor: colorOf(task.service),
+            borderColor: colorOf(task.service),
+            textColor: '#141A22',
+            extendedProps: { task, loc },
+        }];
+    });
 
-                tasks.forEach(task => {
-                    if (!colors[task.name]) {
-                        colors[task.name] = colorPalette[colorIndex % colorPalette.length];
-                        colorIndex++;
-                    }
-                });
+    if (tasks.length === 0) {
+        showMessage(calendarEl, 'No tasks scheduled yet.', 'Register a task with POST /api/tasks, as described in the README, and it will appear here.');
+        return;
+    }
 
-                return colors;
-            }
-
-            function generateEvents(tasks) {
-                const events = [];
-                const defaultDuration = '01:00'; // Default duration of 1 hour
-
-                tasks.forEach(task => {
-                    if (!task.time || !task.name) {
-                        console.error(`Skipping task due to missing required properties: ${JSON.stringify(task)}`);
-                        return;
-                    }
-
-                    const startTime = convertToUserTimeZone(task.time);
-                    const endTime = task.duration ? convertToUserTimeZone(getTaskEndTime(task.time, task.duration)) : convertToUserTimeZone(getTaskEndTime(task.time, defaultDuration));
-
-                    const event = {
-                        title: task.name,
-                        start: startTime,
-                        end: endTime,
-                        allDay: false,
-                        extendedProps: {
-                            service: task.service,
-                            isRecurring: task.is_recurring
-                        }
-                    };
-
-                    if (task.is_recurring && task.days_of_week) {
-                        const daysOfWeek = parseDaysOfWeek(task.days_of_week);
-                        if (daysOfWeek.length > 0) {
-                            event.daysOfWeek = daysOfWeek;
-                            event.startTime = startTime; // 'HH:mm'
-                            event.endTime = endTime; // 'HH:mm'
-                            event.startRecur = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
-                            event.endRecur = new Date(new Date().getFullYear() + 1, 11, 31).toISOString().slice(0, 10); // 'YYYY-MM-DD'
-                        } else {
-                            console.error(`Invalid days_of_week for recurring task: ${task.days_of_week}`);
-                        }
-                    }
-
-                    console.log(`Generated event: ${JSON.stringify(event)}`);
-                    events.push(event);
-                });
-                return events;
-            }
-
-            function getTaskStartTime(time) {
-                return new Date().toISOString().slice(0, 11) + time + ":00Z"; // Combines current date with time and sets as UTC
-            }
-
-            function getTaskEndTime(startTime, duration) {
-                const [hours, minutes] = startTime.split(':').map(Number);
-                const [durHours, durMinutes] = duration.split(':').map(Number);
-                const date = new Date();
-                date.setUTCHours(hours + durHours, minutes + durMinutes, 0, 0);
-                return date.toISOString().slice(11, 16); // returns 'HH:mm'
-            }
-
-            function parseDaysOfWeek(days) {
-                const dayMap = {
-                    "sun": 0, "mon": 1, "tue": 2, "wed": 3, "thu": 4, "fri": 5, "sat": 6
-                };
-                return days.split(',').map(day => dayMap[day.trim().toLowerCase()]).filter(day => day !== undefined);
-            }
-
-            function getTaskStartDate(time) {
-                try {
-                    const [hours, minutes] = time.split(':').map(Number);
-                    if (isNaN(hours) || isNaN(minutes)) {
-                        console.error(`Invalid start time format: ${time}`);
-                        return null;
-                    }
-                    const date = new Date();
-                    date.setUTCHours(hours, minutes, 0, 0);
-                    return date;
-                } catch (error) {
-                    console.error(`Error in getTaskStartDate: ${error.message}`);
-                    return null;
-                }
-            }
-
-            function getTaskEndDate(startTime, duration) {
-                try {
-                    const [startHours, startMinutes] = startTime.split(':').map(Number);
-                    const [durationHours, durationMinutes] = duration.split(':').map(Number);
-                    if (isNaN(startHours) || isNaN(startMinutes) || isNaN(durationHours) || isNaN(durationMinutes)) {
-                        console.error(`Invalid time or duration format: startTime=${startTime}, duration=${duration}`);
-                        return null;
-                    }
-                    const startDate = new Date();
-                    startDate.setUTCHours(startHours, startMinutes, 0, 0);
-                    const endDate = new Date(startDate);
-                    endDate.setUTCHours(startDate.getUTCHours() + durationHours, startDate.getUTCMinutes() + durationMinutes);
-                    return endDate.toISOString();
-                } catch (error) {
-                    console.error(`Error in getTaskEndDate: ${error.message}`);
-                    return null;
-                }
-            }
-
-            function convertToUserTimeZone(time) {
-                const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-                const date = new Date(`1970-01-01T${time}Z`);
-                const options = { timeZone: userTimeZone, hour: '2-digit', minute: '2-digit', hour12: false };
-                return date.toLocaleTimeString([], options);
-            }
-        });
+    const narrow = window.matchMedia('(max-width: 640px)').matches;
+    const time24 = { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' };
+    new FullCalendar.Calendar(calendarEl, {
+        initialView: narrow ? 'timeGridDay' : 'timeGridWeek',
+        firstDay: 1,
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'timeGridDay,timeGridWeek,dayGridMonth',
+        },
+        buttonText: { today: 'Today', day: 'Day', week: 'Week', month: 'Month' },
+        height: 'auto',
+        allDaySlot: false,
+        nowIndicator: true,
+        slotDuration: '01:00:00',
+        slotLabelFormat: time24,
+        eventTimeFormat: time24,
+        displayEventEnd: true,
+        dayMaxEvents: 3,
+        events,
+        eventDidMount(info) {
+            const { task, loc } = info.event.extendedProps;
+            const window = loc.end === null ? `${formatHM(loc.start)}, no set duration` : `${formatHM(loc.start)}–${formatHM(loc.end)}`;
+            info.el.title = [task.name, task.service, window, task.hosts && `Hosts: ${task.hosts}`, task.description]
+                .filter(Boolean).join('\n');
+        },
+    }).render();
 });

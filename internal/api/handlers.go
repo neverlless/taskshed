@@ -152,7 +152,7 @@ func GetTasks(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	var tasks []database.Task
+	tasks := []database.Task{}
 	for rows.Next() {
 		var task database.Task
 		var description sql.NullString

@@ -4,24 +4,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TaskShed Calendar</title>
+    <title>TaskShed calendar</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
     <link rel="stylesheet" href="/static/css/styles.css">
     <link rel="icon" href="/static/images/favicon.ico" type="image/x-icon">
 </head>
 
 <body>
-    <div id="app">
-        <header>
-            <nav>
-                <a href="/">Calendar</a>
-                <a href="/tasks-view">Task View</a>
-            </nav>
-        </header>
-        <main>
-            <div id="calendar"></div>
-        </main>
-    </div>
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.14/index.global.min.js"></script>
+    <header class="topbar">
+        <a class="brand" href="/">TaskShed</a>
+        <nav aria-label="Main">
+            <a href="/" aria-current="page">Calendar</a>
+            <a href="/tasks-view">Tasks</a>
+        </nav>
+    </header>
+    <main>
+        <div class="page-head">
+            <h1>Weekly schedule</h1>
+            <p class="tz" id="tz"></p>
+        </div>
+        <ul class="legend" id="legend" aria-label="Services"></ul>
+        <div id="calendar"></div>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+    <script src="/static/js/schedule.js"></script>
     <script src="/static/js/calendar.js"></script>
 </body>
 
