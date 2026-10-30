@@ -64,7 +64,8 @@ func NewServer(store *database.Store, opts Options) http.Handler {
 	mux.HandleFunc("GET /{$}", s.calendarPage)
 	mux.HandleFunc("GET /tasks-view", s.tasksPage)
 	mux.HandleFunc("GET /tasks.csv", s.tasksCSV)
-	mux.Handle("GET /static/", http.StripPrefix("/static/", staticFiles(http.FileServerFS(static))))
+	mux.Handle("GET /static/", http.StripPrefix("/static/", staticFiles(http.FileServerFS(static), false)))
+	mux.Handle("GET /assets/{version}/", assetFiles(http.FileServerFS(static)))
 
 	// On high-latency links an uncompressed 30 KB page costs extra round trips while TCP ramps up.
 	return s.logRequests(s.recoverPanics(gzhttp.GzipHandler(securityHeaders(mux))))
@@ -146,16 +147,29 @@ func (s *server) healthz(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "ok")
 }
 
-// staticFiles hides directory listings and asks browsers to revalidate,
-// since asset names are not content-hashed.
-func staticFiles(h http.Handler) http.Handler {
+// staticFiles hides directory listings. Fingerprinted files are cached for a
+// year; anything else is revalidated.
+func staticFiles(h http.Handler, immutable bool) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "" || strings.HasSuffix(r.URL.Path, "/") {
 			http.NotFound(w, r)
 			return
 		}
-		w.Header().Set("Cache-Control", "no-cache")
+		if immutable {
+			w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+		} else {
+			w.Header().Set("Cache-Control", "no-cache")
+		}
 		h.ServeHTTP(w, r)
+	})
+}
+
+// assetFiles serves /assets/{version}/path. A page from an older build still
+// gets the current file, just without the long cache lifetime.
+func assetFiles(files http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		version := r.PathValue("version")
+		http.StripPrefix("/assets/"+version, staticFiles(files, version == web.Version)).ServeHTTP(w, r)
 	})
 }
 

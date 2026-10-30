@@ -200,3 +200,29 @@ func TestCompression(t *testing.T) {
 		t.Errorf("healthz: encoding %q body %q", rec.Header().Get("Content-Encoding"), rec.Body.String())
 	}
 }
+
+func TestAssets(t *testing.T) {
+	h := newTestServer(t, "")
+	tests := []struct {
+		path, cache string
+		code        int
+	}{
+		{web.Asset("css/styles.css"), "public, max-age=31536000, immutable", 200},
+		{web.Asset("fonts/ibm-plex-sans-latin-400-normal.woff2"), "public, max-age=31536000, immutable", 200},
+		{"/assets/0ld0ld0ld0ld/css/styles.css", "no-cache", 200}, // page from a previous build
+		{"/static/css/styles.css", "no-cache", 200},
+		{web.Asset("css/"), "", 404},
+	}
+	for _, tt := range tests {
+		rec := do(t, h, "GET", tt.path, "")
+		if rec.Code != tt.code || rec.Header().Get("Cache-Control") != tt.cache {
+			t.Errorf("%s: %d %q; want %d %q", tt.path, rec.Code, rec.Header().Get("Cache-Control"), tt.code, tt.cache)
+		}
+	}
+	page := do(t, h, "GET", "/", "").Body.String()
+	for _, want := range []string{`href="` + web.Asset("css/styles.css") + `"`, `rel="preload" href="` + web.Asset("fonts/ibm-plex-sans-latin-400-normal.woff2") + `"`} {
+		if !strings.Contains(page, want) {
+			t.Errorf("page lacks %s", want)
+		}
+	}
+}
