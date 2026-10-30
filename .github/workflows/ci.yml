@@ -27,6 +27,7 @@ jobs:
           git diff --exit-code -- go.mod go.sum
       - run: go vet ./...
       - run: go test -race ./...
+      - run: node web/schedule.test.mjs
 
   lint:
     runs-on: ubuntu-latest

@@ -8,7 +8,7 @@ A single place to see when scheduled jobs run across your systems.
 [![Container image](https://img.shields.io/badge/image-ghcr.io-2496ED?logo=docker&logoColor=white)](https://github.com/neverlless/taskshed/pkgs/container/taskshed)
 [![License](https://img.shields.io/github/license/neverlless/taskshed)](LICENSE)
 
-TaskShed is a small web app and REST API for recording scheduled tasks (backups, cron jobs, maintenance windows) and seeing them on one weekly calendar. You register tasks through the API or the UI; TaskShed does not run them. It ships as a single static binary with the UI embedded, and stores data in SQLite or PostgreSQL.
+TaskShed is a small web app and REST API for recording scheduled tasks (backups, cron jobs, maintenance windows) and seeing them on one weekly calendar. Your automation registers tasks through the API and the UI shows them read-only; TaskShed does not run them. It ships as a single static binary with the UI embedded, and stores data in SQLite or PostgreSQL.
 
 ## Screenshots
 
@@ -223,6 +223,20 @@ cp taskshed.db taskshed.db.bak
 pg_dump -h "$DB_HOST" -U "$DB_USER" "$DB_NAME" > taskshed.sql
 ```
 
+### From images before the 2026 rewrite
+
+- Images are now published to `ghcr.io/neverlless/taskshed`; the Docker Hub image no longer receives updates.
+- Older images kept the SQLite file inside the container at `/app/taskshed.db`, with no volume. Copy it out before replacing the container, then mount it at `/data`:
+
+  ```sh
+  docker cp taskshed:/app/taskshed.db ./taskshed.db
+  docker volume create taskshed-data
+  docker run --rm -v taskshed-data:/data -v "$PWD":/src alpine \
+    sh -c 'cp /src/taskshed.db /data/ && chown 65532:65532 /data/taskshed.db'
+  ```
+
+- `POST`, `PUT` and `DELETE` still answer 200/200/204, so existing Ansible `uri` tasks keep working. Set `API_TOKEN` and add the `Authorization` header to them to close writes to anonymous clients.
+
 ## Development
 
 Requires Go (the version in [`go.mod`](go.mod)). No C toolchain is needed.
@@ -230,6 +244,7 @@ Requires Go (the version in [`go.mod`](go.mod)). No C toolchain is needed.
 ```sh
 go run ./cmd/server                 # http://localhost:8080
 go test -race ./...
+node web/schedule.test.mjs          # UI time math
 golangci-lint run                   # golangci-lint v2
 docker build -t taskshed:dev .
 ```
