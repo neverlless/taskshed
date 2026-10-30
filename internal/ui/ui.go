@@ -51,10 +51,8 @@ func (d TasksData) values(sort, order string) url.Values {
 	return v
 }
 
-// URL is the current tasks view.
 func (d TasksData) URL() string { return "/tasks-view?" + d.values(d.Sort, d.Order).Encode() }
 
-// CSVURL exports the current view.
 func (d TasksData) CSVURL() string { return "/tasks.csv?" + d.values(d.Sort, d.Order).Encode() }
 
 // SortURL sorts by col, toggling the order if col is already the sort column.
@@ -146,7 +144,6 @@ func (d CalendarData) isCurrent() bool {
 	return d.Monday.Equal(schedule.WeekStart(d.Now, d.Loc))
 }
 
-// URL is the current calendar view.
 func (d CalendarData) URL() string { return weekURL(d.Monday, d.isCurrent()) }
 
 func (d CalendarData) shiftURL(days int) string {
@@ -160,7 +157,6 @@ func (d CalendarData) isToday(day schedule.Day) bool {
 	return y1 == y2 && m1 == m2 && d1 == d2
 }
 
-// isPast is true for days before today in the current week.
 func (d CalendarData) isPast(day schedule.Day) bool {
 	return d.isCurrent() && day.Date.Before(d.Now) && !d.isToday(day)
 }

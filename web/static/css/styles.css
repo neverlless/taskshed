@@ -597,7 +597,7 @@ th[aria-sort="descending"] .sort {
     padding: 6px 12px;
 }
 
-/* Previous and next read as one segmented control, like the old toolbar. */
+/* Previous and next read as one segmented control. */
 .cal-nav .button:nth-child(1) {
     border-radius: var(--radius) 0 0 var(--radius);
 }
@@ -713,7 +713,6 @@ th[aria-sort="descending"] .sort {
     white-space: nowrap;
 }
 
-/* One line: "00:30–01:00 Log rotation". */
 .cal-event.short {
     flex-direction: row;
     align-items: baseline;
@@ -727,7 +726,6 @@ th[aria-sort="descending"] .sort {
     max-width: 100%;
 }
 
-/* Continues a run from the previous day. */
 .cal-event.continued {
     border-top-style: dashed;
     border-top-left-radius: 0;

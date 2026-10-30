@@ -66,8 +66,7 @@ func NewServer(store *database.Store, opts Options) http.Handler {
 	mux.HandleFunc("GET /tasks.csv", s.tasksCSV)
 	mux.Handle("GET /static/", http.StripPrefix("/static/", staticFiles(http.FileServerFS(static))))
 
-	// Compression matters here: the cluster is a ~250ms round trip from some users, and a
-	// 30 KB response needs extra round trips while TCP ramps up; gzipped it fits in the first.
+	// On high-latency links an uncompressed 30 KB page costs extra round trips while TCP ramps up.
 	return s.logRequests(s.recoverPanics(gzhttp.GzipHandler(securityHeaders(mux))))
 }
 
