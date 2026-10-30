@@ -49,8 +49,8 @@ func TestTasksPageFullAndFragment(t *testing.T) {
 		!strings.Contains(body, `<option value="Database">Database</option>`) || !strings.Contains(body, `id="task-results"`) {
 		t.Fatalf("full page: %d %s", full.Code, body)
 	}
-	for k, v := range map[string]string{"Vary": "HX-Request, Cookie", "Content-Security-Policy": pageCSP} {
-		if got := full.Header().Get(k); got != v {
+	for k, v := range map[string]string{"Vary": "Accept-Encoding, HX-Request, Cookie", "Content-Security-Policy": pageCSP} {
+		if got := strings.Join(full.Header().Values(k), ", "); got != v {
 			t.Errorf("%s = %q", k, got)
 		}
 	}
@@ -205,7 +205,7 @@ func TestCalendarPage(t *testing.T) {
 			t.Errorf("missing %q", want)
 		}
 	}
-	if rec.Header().Get("Content-Security-Policy") != pageCSP || rec.Header().Get("Vary") != "HX-Request, Cookie" {
+	if rec.Header().Get("Content-Security-Policy") != pageCSP || strings.Join(rec.Header().Values("Vary"), ", ") != "Accept-Encoding, HX-Request, Cookie" {
 		t.Errorf("headers %v", rec.Header())
 	}
 	// Two runs of the Mon,Wed task this week, the dated one-off (Fri), 7 log rotations.

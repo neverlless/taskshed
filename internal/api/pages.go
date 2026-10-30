@@ -54,7 +54,7 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, c te
 	h := w.Header()
 	h.Set("Content-Security-Policy", pageCSP)
 	h.Set("Cache-Control", "no-cache")
-	h.Set("Vary", "HX-Request, Cookie")
+	h.Add("Vary", "HX-Request, Cookie") // Add: gzhttp already set Vary: Accept-Encoding
 	h.Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(status)
 	if err := c.Render(ui.WithTheme(r.Context(), viewerTheme(r)), w); err != nil {
@@ -169,7 +169,7 @@ func (s *server) tasksCSV(w http.ResponseWriter, r *http.Request) {
 	h.Set("Content-Type", "text/csv; charset=utf-8")
 	h.Set("Content-Disposition", `attachment; filename="tasks.csv"`)
 	h.Set("Cache-Control", "no-store")
-	h.Set("Vary", "Cookie")
+	h.Add("Vary", "Cookie")
 	// The BOM makes Excel read UTF-8 (Cyrillic task names) correctly.
 	_, _ = w.Write([]byte("\xEF\xBB\xBF"))
 	cw := csv.NewWriter(w)

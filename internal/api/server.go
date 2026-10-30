@@ -15,6 +15,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/klauspost/compress/gzhttp"
+
 	"github.com/neverlless/taskshed/internal/database"
 	"github.com/neverlless/taskshed/web"
 )
@@ -64,7 +66,9 @@ func NewServer(store *database.Store, opts Options) http.Handler {
 	mux.HandleFunc("GET /tasks.csv", s.tasksCSV)
 	mux.Handle("GET /static/", http.StripPrefix("/static/", staticFiles(http.FileServerFS(static))))
 
-	return s.logRequests(s.recoverPanics(securityHeaders(mux)))
+	// Compression matters here: the cluster is a ~250ms round trip from some users, and a
+	// 30 KB response needs extra round trips while TCP ramps up; gzipped it fits in the first.
+	return s.logRequests(s.recoverPanics(gzhttp.GzipHandler(securityHeaders(mux))))
 }
 
 func (s *server) listTasks(w http.ResponseWriter, r *http.Request) {

@@ -5,6 +5,7 @@ go 1.26.0
 require (
 	github.com/a-h/templ v0.3.1100
 	github.com/jackc/pgx/v5 v5.11.0
+	github.com/klauspost/compress v1.20.3
 	modernc.org/sqlite v1.61.0
 )
 

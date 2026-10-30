@@ -1,6 +1,8 @@
 package api
 
 import (
+	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"io"
 	"log/slog"
@@ -11,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/neverlless/taskshed/internal/database"
+	"github.com/neverlless/taskshed/web"
 )
 
 func newTestServer(t *testing.T, token string) http.Handler {
@@ -166,5 +169,34 @@ func TestPanicRecovery(t *testing.T) {
 	rec := do(t, h, "GET", "/", "")
 	if rec.Code != 500 || !strings.Contains(rec.Body.String(), "internal server error") {
 		t.Fatalf("%d %s", rec.Code, rec.Body)
+	}
+}
+
+func TestCompression(t *testing.T) {
+	h := newTestServer(t, "")
+	want, err := web.FS.ReadFile("static/css/styles.css")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rec := do(t, h, "GET", "/static/css/styles.css", "", "Accept-Encoding", "gzip")
+	if rec.Header().Get("Content-Encoding") != "gzip" || rec.Body.Len() >= len(want) {
+		t.Fatalf("not compressed: encoding %q, %d bytes", rec.Header().Get("Content-Encoding"), rec.Body.Len())
+	}
+	zr, err := gzip.NewReader(rec.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := io.ReadAll(zr)
+	if err != nil || !bytes.Equal(got, want) {
+		t.Fatalf("decompressed body differs (err %v)", err)
+	}
+
+	// Clients that don't ask for gzip get the plain file, and tiny responses stay uncompressed.
+	if rec := do(t, h, "GET", "/static/css/styles.css", ""); rec.Header().Get("Content-Encoding") != "" || !bytes.Equal(rec.Body.Bytes(), want) {
+		t.Errorf("plain request got encoding %q", rec.Header().Get("Content-Encoding"))
+	}
+	if rec := do(t, h, "GET", "/healthz", "", "Accept-Encoding", "gzip"); rec.Header().Get("Content-Encoding") != "" || rec.Body.String() != "ok" {
+		t.Errorf("healthz: encoding %q body %q", rec.Header().Get("Content-Encoding"), rec.Body.String())
 	}
 }
