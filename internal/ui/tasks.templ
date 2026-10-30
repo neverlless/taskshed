@@ -122,7 +122,7 @@ templ taskRow(d TasksData, r schedule.Row) {
 			<td data-label="Days">
 				<span class="days" role="img" aria-label={ dayLabel(r) }>
 					for _, wd := range schedule.WeekOrder {
-						<span class={ templ.KV("on", r.HasDay(wd)) } aria-hidden="true">{ wd.String()[:1] }</span>
+						<span class={ templ.KV("on", r.HasDay(wd)) } title={ wd.String() } aria-hidden="true">{ wd.String()[:2] }</span>
 					}
 				</span>
 			</td>

@@ -55,17 +55,18 @@
 }
 
 :root {
+    /* Each token is light-dark(light, dark); color-scheme picks the side, so the theme switch only sets data-theme. */
     color-scheme: light dark;
-    --bg: #EEF1F5;
-    --surface: #FFFFFF;
-    --surface-2: #E4E8EE;
-    --line: #D5DBE3;
-    --text: #18202B;
-    --muted: #556173;
+    --bg: light-dark(#EEF1F5, #12161C);
+    --surface: light-dark(#FFFFFF, #1A2029);
+    --surface-2: light-dark(#E4E8EE, #232B36);
+    --line: light-dark(#D5DBE3, #2B3441);
+    --text: light-dark(#18202B, #E3E8EF);
+    --muted: light-dark(#556173, #95A1B0);
     /* Blue marks a task's scheduled window, amber marks "now"; nothing else uses colour. */
-    --window: #3567AE;
-    --now: #C27C0E;
-    --focus: #3567AE;
+    --window: light-dark(#3567AE, #6F9FE0);
+    --now: light-dark(#C27C0E, #F0B341);
+    --focus: light-dark(#3567AE, #8DB8F2);
     --radius: 6px;
     font-family: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
     font-size: 15px;
@@ -73,18 +74,12 @@
     font-variant-numeric: tabular-nums;
 }
 
-@media (prefers-color-scheme: dark) {
-    :root {
-        --bg: #12161C;
-        --surface: #1A2029;
-        --surface-2: #232B36;
-        --line: #2B3441;
-        --text: #E3E8EF;
-        --muted: #95A1B0;
-        --window: #6F9FE0;
-        --now: #F0B341;
-        --focus: #8DB8F2;
-    }
+:root[data-theme="light"] {
+    color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+    color-scheme: dark;
 }
 
 * {
@@ -153,6 +148,42 @@ body {
     color: var(--text);
     font-weight: 500;
     border-bottom-color: var(--text);
+}
+
+.theme-switch {
+    display: inline-flex;
+    gap: 2px;
+    margin-left: auto;
+    padding: 2px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+/* display above would otherwise beat the hidden attribute. */
+.theme-switch[hidden] {
+    display: none;
+}
+
+.theme-switch button {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+}
+
+.theme-switch button:hover {
+    color: var(--text);
+}
+
+.theme-switch button[aria-pressed="true"] {
+    background: var(--surface-2);
+    color: var(--text);
 }
 
 main {
@@ -230,6 +261,19 @@ select,
     border: 1px solid var(--line);
     border-radius: var(--radius);
     padding: 7px 12px;
+}
+
+/* Own chevron: the native one sits too close to the edge and ignores padding. Gradients follow the theme. */
+select {
+    appearance: none;
+    padding-right: 36px;
+    background-image:
+        linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+        linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+    background-position: right 19px center, right 14px center;
+    background-size: 5px 5px;
+    background-repeat: no-repeat;
+    cursor: pointer;
 }
 
 /* Browser default placeholder grey is under 4.5:1 on the dark surface. */
@@ -344,13 +388,18 @@ th[aria-sort="descending"] .sort {
 }
 
 .days span {
-    width: 20px;
+    width: 24px;
     height: 22px;
     display: grid;
     place-items: center;
     font-size: 12px;
     color: var(--muted);
     border-radius: 3px;
+}
+
+/* A little air before the weekend so Sa/Su read as their own group. */
+.days span:nth-child(6) {
+    margin-left: 4px;
 }
 
 .days .on {
@@ -427,8 +476,16 @@ th[aria-sort="descending"] .sort {
 
 @media (max-width: 760px) {
     .topbar {
-        gap: 16px;
+        gap: 12px;
         padding: 0 16px;
+    }
+
+    .topbar nav a {
+        padding: 0 8px;
+    }
+
+    .theme-switch button {
+        width: 26px;
     }
 
     main {

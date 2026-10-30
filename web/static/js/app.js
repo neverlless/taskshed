@@ -1,5 +1,6 @@
 // @ts-check
-// Tells the server the viewer's time zone (pages are rendered in it) and labels it in the page header.
+// Tells the server the viewer's time zone (pages are rendered in it), labels it in the page header,
+// and drives the theme switch.
 
 /**
  * Formats minutes as "HH:MM".
@@ -30,3 +31,23 @@ document.cookie = `tz=${zone}; path=/; max-age=31536000; SameSite=Lax`;
 
 const label = document.getElementById('tz');
 if (label) label.textContent = timezoneLabel(zone, new Date());
+
+// Theme switch: the server renders the saved choice from the cookie, so this only handles clicks.
+const themeSwitch = document.querySelector('.theme-switch');
+if (themeSwitch instanceof HTMLElement) {
+    themeSwitch.hidden = false;
+    themeSwitch.addEventListener('click', (event) => {
+        const button = event.target instanceof Element ? event.target.closest('button[data-theme-value]') : null;
+        if (!(button instanceof HTMLButtonElement)) return;
+        const theme = button.dataset.themeValue ?? '';
+        if (theme) document.documentElement.dataset.theme = theme;
+        else delete document.documentElement.dataset.theme;
+        // biome-ignore lint/suspicious/noDocumentCookie: same reason as the tz cookie; the server reads it on the next render.
+        document.cookie = theme
+            ? `theme=${theme}; path=/; max-age=31536000; SameSite=Lax`
+            : 'theme=; path=/; max-age=0; SameSite=Lax';
+        for (const other of themeSwitch.querySelectorAll('button[data-theme-value]')) {
+            other.setAttribute('aria-pressed', String(other === button));
+        }
+    });
+}

@@ -4,6 +4,7 @@ package ui
 //go:generate go tool templ generate
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -12,6 +13,18 @@ import (
 
 	"github.com/neverlless/taskshed/internal/schedule"
 )
+
+type themeKey struct{}
+
+// WithTheme stores the viewer's theme choice for Layout: "light", "dark", or "" to follow the system.
+func WithTheme(ctx context.Context, theme string) context.Context {
+	return context.WithValue(ctx, themeKey{}, theme)
+}
+
+func themeFrom(ctx context.Context) string {
+	t, _ := ctx.Value(themeKey{}).(string)
+	return t
+}
 
 // TasksData is everything the tasks page and its results fragment show.
 type TasksData struct {

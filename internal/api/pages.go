@@ -36,6 +36,14 @@ func viewerLocation(r *http.Request) (loc *time.Location, hasCookie bool) {
 	return loc, true
 }
 
+// viewerTheme is the theme switch's cookie; any other value means follow the system.
+func viewerTheme(r *http.Request) string {
+	if c, err := r.Cookie("theme"); err == nil && (c.Value == "light" || c.Value == "dark") {
+		return c.Value
+	}
+	return ""
+}
+
 // isFragment: htmx swaps only the fragment, except when restoring history,
 // where it replaces the whole body.
 func isFragment(r *http.Request) bool {
@@ -49,7 +57,7 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, c te
 	h.Set("Vary", "HX-Request, Cookie")
 	h.Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(status)
-	if err := c.Render(r.Context(), w); err != nil {
+	if err := c.Render(ui.WithTheme(r.Context(), viewerTheme(r)), w); err != nil {
 		s.log.Error("render failed", "path", r.URL.Path, "err", err)
 	}
 }

@@ -249,3 +249,23 @@ func TestStaticAssets(t *testing.T) {
 		t.Errorf("CSP %q", pageCSP)
 	}
 }
+
+func TestThemeCookie(t *testing.T) {
+	h, _ := newPageServer(t)
+	tests := []struct{ cookie, want string }{
+		{"theme=dark", `<html lang="en" data-theme="dark">`},
+		{"theme=light", `<html lang="en" data-theme="light">`},
+		{"theme=purple", `<html lang="en">`},
+		{"", `<html lang="en">`},
+	}
+	for _, tt := range tests {
+		var hdr []string
+		if tt.cookie != "" {
+			hdr = []string{"Cookie", tt.cookie}
+		}
+		body := do(t, h, "GET", "/", "", hdr...).Body.String()
+		if !strings.Contains(body, tt.want) {
+			t.Errorf("cookie %q: want %s", tt.cookie, tt.want)
+		}
+	}
+}
