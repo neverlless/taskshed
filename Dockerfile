@@ -41,5 +41,6 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD ["/taskshed", "-healthcheck"]
 
-USER nonroot:nonroot
+# Numeric, so Kubernetes can verify runAsNonRoot (it rejects a named user it cannot resolve).
+USER 65532:65532
 ENTRYPOINT ["/taskshed"]
