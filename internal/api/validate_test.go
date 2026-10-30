@@ -30,6 +30,8 @@ func TestValidateTask(t *testing.T) {
 		{"bad minutes", func(t *database.Task) { t.Time = "10:60" }, "time must be between", nil},
 		{"time format", func(t *database.Task) { t.Time = "10.30" }, "time must be HH:MM", nil},
 		{"pads duration", func(t *database.Task) { t.Duration = "1:30" }, "", func(t database.Task) bool { return t.Duration == "01:30" }},
+		{"unpadded duration minutes", func(t *database.Task) { t.Duration = "11:2" }, "", func(t database.Task) bool { return t.Duration == "11:02" }},
+		{"unpadded time minutes", func(t *database.Task) { t.Time = "23:5" }, "", func(t database.Task) bool { return t.Time == "23:05" }},
 		{"long duration", func(t *database.Task) { t.Duration = "168:00" }, "", func(t database.Task) bool { return t.Duration == "168:00" }},
 		{"too long duration", func(t *database.Task) { t.Duration = "168:01" }, "duration must be between", nil},
 		{"zero duration", func(t *database.Task) { t.Duration = "0:00" }, "duration must be between", nil},

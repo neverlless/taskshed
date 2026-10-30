@@ -245,3 +245,16 @@ func TestColors(t *testing.T) {
 		t.Error("palette wraps")
 	}
 }
+
+func TestParseHMUnpaddedMinutes(t *testing.T) {
+	for in, want := range map[string]int{"1:5": 65, "01:05": 65, "11:2": 662, "0:30": 30} {
+		if got, ok := parseHM(in); !ok || got != want {
+			t.Errorf("parseHM(%q) = %d, %v; want %d", in, got, ok, want)
+		}
+	}
+	for _, in := range []string{"1:", "1:75", "1:005", "x"} {
+		if _, ok := parseHM(in); ok {
+			t.Errorf("parseHM(%q) accepted", in)
+		}
+	}
+}

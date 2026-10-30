@@ -14,8 +14,9 @@ import (
 )
 
 var (
-	clockRe    = regexp.MustCompile(`^(\d{1,2}):(\d{2})$`)
-	durationRe = regexp.MustCompile(`^(\d{1,3}):(\d{2})$`)
+	// Minutes may be unpadded ("1:5" = 01:05): the Bareos syncer and other 1.x clients send that.
+	clockRe    = regexp.MustCompile(`^(\d{1,2}):(\d{1,2})$`)
+	durationRe = regexp.MustCompile(`^(\d{1,3}):(\d{1,2})$`)
 	weekdays   = []string{"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}
 )
 

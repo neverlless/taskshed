@@ -21,7 +21,8 @@ const (
 	DefaultLength = time.Hour
 )
 
-var hmRe = regexp.MustCompile(`^(\d{1,3}):(\d{2})$`)
+// Unpadded minutes ("1:5") occur in data written before validation existed.
+var hmRe = regexp.MustCompile(`^(\d{1,3}):(\d{1,2})$`)
 
 // Palette colours services; all hues are light enough for dark event text.
 var Palette = []string{"#8DB8F2", "#93D3A2", "#E9A6C9", "#C2AEF5", "#7FD4CF", "#F2AE8A", "#CFD879", "#B6C2D1"}
