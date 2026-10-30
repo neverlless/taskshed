@@ -69,6 +69,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         eventTimeFormat: time24,
         displayEventEnd: true,
         dayMaxEvents: 3,
+        // Events under ~1h at 44px/h get the one-line "time - title" layout instead of a clipped second line.
+        eventShortHeight: 40,
         events,
         eventDidMount(info) {
             const { task, loc } = info.event.extendedProps;
