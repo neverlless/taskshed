@@ -40,7 +40,7 @@ TaskShed is a small web app and REST API for recording scheduled tasks (backups,
 
 ## Features
 
-- Weekly calendar of recurring and one-off tasks.
+- Server-rendered weekly calendar of recurring and one-off tasks, with week-by-week navigation and a day-by-day agenda on phones. No calendar JavaScript.
 - Task table with a 24-hour window strip per task and a marker on tasks running now.
 - Server-rendered UI with htmx: no build step and little JavaScript.
 - Times are converted to the viewer's timezone on the server and stay correct across DST changes.
@@ -267,7 +267,7 @@ templ is pinned in `go.mod` as a Go tool, so there is nothing extra to install. 
 | `internal/database` | SQLite and PostgreSQL store and schema migrations. |
 | `internal/schedule` | Schedule and timezone math (DST-aware, embedded tzdata). |
 | `internal/ui` | Server-rendered pages and htmx partials, written in [templ](https://templ.guide). |
-| `web/static` | Embedded assets: CSS, two small JS modules, and vendored FullCalendar, htmx and fonts. |
+| `web/static` | Embedded assets: CSS, one small JS module (`app.js`), and vendored htmx and fonts. |
 | `web/types` | Type declarations for the vendored globals, used only by `npm run typecheck`. |
 
 ## License

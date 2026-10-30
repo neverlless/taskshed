@@ -25,6 +25,7 @@ function timezoneLabel(zone, now) {
 
 // IANA names (letters, "/", "_", "-", "+") are valid cookie octets, so the value is stored as is.
 const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+// biome-ignore lint/suspicious/noDocumentCookie: must be set synchronously before htmx's first request; cookieStore is async and not in every browser.
 document.cookie = `tz=${zone}; path=/; max-age=31536000; SameSite=Lax`;
 
 const label = document.getElementById('tz');
