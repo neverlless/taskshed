@@ -33,3 +33,6 @@ dist/
 
 # Claude Code worktrees
 .claude/worktrees/
+
+# Node dev tooling
+node_modules/

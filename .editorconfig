@@ -16,3 +16,9 @@ indent_style = tab
 
 [*.md]
 trim_trailing_whitespace = false
+
+[*.templ]
+indent_style = tab
+
+[*.{js,mjs}]
+indent_size = 4

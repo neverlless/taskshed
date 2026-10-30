@@ -1,0 +1,19 @@
+{
+  "name": "taskshed-web",
+  "private": true,
+  "type": "module",
+  "description": "Dev-only tooling for linting and type-checking the browser JavaScript. Nothing here ships in the binary.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "lint": "biome check web/static/js",
+    "format": "biome format --write web/static/js",
+    "typecheck": "tsc -p jsconfig.json",
+    "check": "npm run lint && npm run typecheck"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.4",
+    "typescript": "7.0.2"
+  }
+}
