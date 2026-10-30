@@ -4,7 +4,7 @@ Thanks for helping out. Small, focused pull requests are the easiest to review.
 
 ## Development setup
 
-You need Go (the version in `go.mod` or newer). No C toolchain is required.
+You need Go (the version in `go.mod` or newer). No C toolchain is required. Node.js 22 or newer is only needed to lint and type-check the browser JavaScript; nothing from npm ships in the binary.
 
 ```sh
 git clone https://github.com/neverlless/taskshed.git
@@ -12,7 +12,14 @@ cd taskshed
 go run ./cmd/server        # http://localhost:8080, SQLite file ./taskshed.db
 ```
 
-The web UI lives in `web/` and is embedded into the binary at build time, so restart the server after editing it.
+Pages are server-rendered with [templ](https://templ.guide) and htmx. Templates live in `internal/ui/*.templ`; templ is pinned in `go.mod` as a Go tool, so no separate install is needed. After editing a `.templ` file, regenerate and commit the `*_templ.go` output:
+
+```sh
+go tool templ generate             # once
+go tool templ generate --watch     # or keep it running while you work
+```
+
+Templates compile to Go and static assets in `web/static` are embedded at build time, so restart the server after editing either. The two JS modules in `web/static/js` use `// @ts-check` and JSDoc types; keep them that way.
 
 To work against PostgreSQL:
 
@@ -24,11 +31,18 @@ DB_TYPE=postgres DB_HOST=localhost DB_USER=taskshed DB_PASSWORD=dev go run ./cmd
 
 ## Tests and lint
 
+Run these before opening a pull request; CI runs the same checks:
+
 ```sh
+go tool templ generate     # CI fails if generated files are stale or uncommitted
+go mod tidy                # CI fails if go.mod or go.sum are not tidy
+go vet ./...
 go test -race ./...
 golangci-lint run          # golangci-lint v2, config in .golangci.yml
-go mod tidy                # CI fails if go.mod or go.sum are not tidy
+npm ci && npm run check    # Biome lint and TypeScript check of web/static/js
 ```
+
+`npm run format` applies Biome's formatting to the JS.
 
 ## Commits
 

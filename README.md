@@ -35,13 +35,18 @@ TaskShed is a small web app and REST API for recording scheduled tasks (backups,
 - [Deployment](#deployment)
 - [Upgrading](#upgrading)
 - [Development](#development)
+- [Project layout](#project-layout)
 - [License](#license)
 
 ## Features
 
-- Weekly calendar of recurring and one-off tasks, shown in the viewer's timezone.
+- Weekly calendar of recurring and one-off tasks.
 - Task table with a 24-hour window strip per task and a marker on tasks running now.
-- CSV export of the task list.
+- Server-rendered UI with htmx: no build step and little JavaScript.
+- Times are converted to the viewer's timezone on the server and stay correct across DST changes.
+- Search, service filter and sort are kept in the URL, so a filtered view can be bookmarked or shared.
+- CSV export of the filtered task list, in the viewer's timezone.
+- Read-only UI; tasks are created and changed through the API.
 - SQLite (default, zero setup) or PostgreSQL storage.
 - Single static binary with the web UI embedded; no runtime files needed.
 - Optional bearer token for write requests; reads stay open.
@@ -113,7 +118,7 @@ Other flags:
 
 ## API
 
-All times are in UTC. The UI converts them to the viewer's timezone.
+All times are in UTC. The UI converts them to the viewer's timezone (sent by the browser in a `tz` cookie).
 
 | Method | Path | Success | Auth |
 | --- | --- | --- | --- |
@@ -239,17 +244,31 @@ pg_dump -h "$DB_HOST" -U "$DB_USER" "$DB_NAME" > taskshed.sql
 
 ## Development
 
-Requires Go (the version in [`go.mod`](go.mod)). No C toolchain is needed.
+Requires Go (the version in [`go.mod`](go.mod)). No C toolchain is needed. Node.js 22 or newer is only needed to lint the browser JavaScript.
 
 ```sh
 go run ./cmd/server                 # http://localhost:8080
+go tool templ generate              # after editing internal/ui/*.templ
+go tool templ generate --watch      # optional: regenerate on save
 go test -race ./...
-node web/schedule.test.mjs          # UI time math
 golangci-lint run                   # golangci-lint v2
+npm ci && npm run check             # Biome lint and TypeScript check of web/static/js
 docker build -t taskshed:dev .
 ```
 
-The UI in `web/` is embedded at build time; restart the server after editing it. See [CONTRIBUTING.md](CONTRIBUTING.md) for the pull request flow and [SECURITY.md](SECURITY.md) for reporting vulnerabilities.
+templ is pinned in `go.mod` as a Go tool, so there is nothing extra to install. Generated `*_templ.go` files are committed; CI fails if they are out of date. Templates compile to Go and static files are embedded at build time, so restart the server after editing either. See [CONTRIBUTING.md](CONTRIBUTING.md) for the pull request flow and [SECURITY.md](SECURITY.md) for reporting vulnerabilities.
+
+## Project layout
+
+| Path | Contents |
+| --- | --- |
+| `cmd/server` | Entry point: configuration, logging, HTTP server, graceful shutdown. |
+| `internal/api` | JSON API, auth, `/healthz` and validation. |
+| `internal/database` | SQLite and PostgreSQL store and schema migrations. |
+| `internal/schedule` | Schedule and timezone math (DST-aware, embedded tzdata). |
+| `internal/ui` | Server-rendered pages and htmx partials, written in [templ](https://templ.guide). |
+| `web/static` | Embedded assets: CSS, two small JS modules, and vendored FullCalendar, htmx and fonts. |
+| `web/types` | Type declarations for the vendored globals, used only by `npm run typecheck`. |
 
 ## License
 
