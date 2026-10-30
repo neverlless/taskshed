@@ -21,26 +21,31 @@ import (
 
 const (
 	maxBodyBytes = 1 << 20
-	// FullCalendar injects its icon font as a data: URL.
-	pageCSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
+	pageCSP      = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
 )
 
 type Options struct {
 	// APIToken, if set, is required as a Bearer token on POST/PUT/DELETE.
 	APIToken string
 	Logger   *slog.Logger
+	// Now is the clock pages render with; nil means time.Now. For tests.
+	Now func() time.Time
 }
 
 type server struct {
 	store *database.Store
 	log   *slog.Logger
 	token string
+	now   func() time.Time
 }
 
 func NewServer(store *database.Store, opts Options) http.Handler {
-	s := &server{store: store, log: opts.Logger, token: opts.APIToken}
+	s := &server{store: store, log: opts.Logger, token: opts.APIToken, now: opts.Now}
 	if s.log == nil {
 		s.log = slog.Default()
+	}
+	if s.now == nil {
+		s.now = time.Now
 	}
 	static, err := fs.Sub(web.FS, "static")
 	if err != nil {
@@ -54,8 +59,9 @@ func NewServer(store *database.Store, opts Options) http.Handler {
 	mux.HandleFunc("PUT /api/tasks/{id}", s.requireToken(s.updateTask))
 	mux.HandleFunc("DELETE /api/tasks/{id}", s.requireToken(s.deleteTask))
 	mux.HandleFunc("GET /healthz", s.healthz)
-	mux.HandleFunc("GET /{$}", page("templates/calendar.html"))
-	mux.HandleFunc("GET /tasks-view", page("templates/tasks-view.html"))
+	mux.HandleFunc("GET /{$}", s.calendarPage)
+	mux.HandleFunc("GET /tasks-view", s.tasksPage)
+	mux.HandleFunc("GET /tasks.csv", s.tasksCSV)
 	mux.Handle("GET /static/", http.StripPrefix("/static/", staticFiles(http.FileServerFS(static))))
 
 	return s.logRequests(s.recoverPanics(securityHeaders(mux)))
@@ -135,14 +141,6 @@ func (s *server) healthz(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Fprint(w, "ok")
-}
-
-func page(name string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Security-Policy", pageCSP)
-		w.Header().Set("Cache-Control", "no-cache")
-		http.ServeFileFS(w, r, web.FS, name)
-	}
 }
 
 // staticFiles hides directory listings and asks browsers to revalidate,

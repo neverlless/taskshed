@@ -1,0 +1,159 @@
+package ui
+
+import "github.com/neverlless/taskshed/internal/schedule"
+
+templ TasksPage(d TasksData) {
+	@Layout("TaskShed tasks", "tasks") {
+		@PageHead("Scheduled tasks")
+		<div class="tasks-layout">
+			<form
+				id="filters"
+				class="filters"
+				action="/tasks-view"
+				method="get"
+				role="search"
+				hx-get="/tasks-view"
+				hx-target="#task-results"
+				hx-swap="outerHTML"
+				hx-trigger="input changed delay:250ms from:#search, change from:#service-filter, submit"
+				hx-replace-url="true"
+				hx-include="#task-results [name]"
+				hx-indicator="#task-results"
+			>
+				<label class="visually-hidden" for="search">Search tasks</label>
+				<input type="search" id="search" name="q" value={ d.Query } placeholder="Search by name, service or host" autocomplete="off" maxlength="200"/>
+				<label class="visually-hidden" for="service-filter">Service</label>
+				<select id="service-filter" name="service">
+					<option value="">All services</option>
+					for _, s := range d.Services {
+						<option value={ s } selected?={ s == d.Service }>{ s }</option>
+					}
+				</select>
+				<button type="submit" class="visually-hidden">Apply filters</button>
+			</form>
+			@TaskResults(d)
+		</div>
+	}
+}
+
+// TaskResults is the #task-results fragment htmx swaps on filter, sort and refresh.
+templ TaskResults(d TasksData) {
+	<div
+		id="task-results"
+		class="task-results"
+		hx-get={ d.URL() }
+		hx-trigger={ trigger(d.AutoLoad) }
+		hx-target="this"
+		hx-swap="outerHTML"
+	>
+		<input type="hidden" name="sort" value={ d.Sort } form="filters"/>
+		<input type="hidden" name="order" value={ d.Order } form="filters"/>
+		switch  {
+			case d.Failed:
+				@Message("Tasks could not be loaded.", "The server could not read the task list. Check the server logs, then reload the page.", "Reload", d.URL())
+			case d.Total == 0:
+				@Message("No tasks scheduled yet.", "Register a task with POST /api/tasks, as described in the README, and it will appear here.", "", "")
+			default:
+				<span class="count" aria-live="polite">{ d.countText() }</span>
+				<a class="button" href={ templ.URL(d.CSVURL()) } download>Export CSV</a>
+				if len(d.Rows) == 0 {
+					@Message("No tasks match these filters.", "", "Clear filters", "/tasks-view")
+				} else {
+					@taskTable(d)
+				}
+		}
+	</div>
+}
+
+templ taskTable(d TasksData) {
+	<table class="task-table">
+		<thead>
+			<tr>
+				@sortHeader(d, "name", "Task")
+				@sortHeader(d, "service", "Service")
+				<th scope="col">Days</th>
+				@sortHeader(d, "start", "Window")
+				<th scope="col">Hosts</th>
+			</tr>
+		</thead>
+		<tbody>
+			for _, r := range d.Rows {
+				@taskRow(d, r)
+			}
+		</tbody>
+	</table>
+}
+
+templ sortHeader(d TasksData, col, label string) {
+	<th scope="col" aria-sort={ d.ariaSort(col) }>
+		<a
+			class="sort"
+			href={ templ.URL(d.SortURL(col)) }
+			hx-get={ d.SortURL(col) }
+			hx-target="#task-results"
+			hx-swap="outerHTML"
+			hx-replace-url="true"
+			hx-indicator="#task-results"
+		>
+			{ label }
+			<span class="sort-icon" aria-hidden="true">{ d.sortIcon(col) }</span>
+		</a>
+	</th>
+}
+
+templ taskRow(d TasksData, r schedule.Row) {
+	<tr>
+		<td class="cell-task" data-label="Task">
+			<div class="task-name">
+				if r.Running {
+					<span class="running-mark" title="Running now"><span class="visually-hidden">Running now: </span></span>
+				}
+				{ r.Task.Name }
+			</div>
+			if r.Task.Description != "" {
+				<div class="task-desc">{ r.Task.Description }</div>
+			}
+			if !r.Task.IsRecurring {
+				<div class="task-desc">One-off task</div>
+			}
+		</td>
+		<td data-label="Service">{ r.Task.Service }</td>
+		if r.Task.IsRecurring {
+			<td data-label="Days">
+				<span class="days" role="img" aria-label={ dayLabel(r) }>
+					for _, wd := range schedule.WeekOrder {
+						<span class={ templ.KV("on", r.HasDay(wd)) } aria-hidden="true">{ wd.String()[:1] }</span>
+					}
+				</span>
+			</td>
+		} else {
+			<td data-label="Date">
+				if r.Date.IsZero() {
+					<span class="task-desc">No date</span>
+				} else {
+					{ schedule.FormatDate(r.Date) }
+				}
+			</td>
+		}
+		<td class="cell-window" data-label="Window">
+			if r.Valid {
+				<div class="window-text">{ r.Window() }</div>
+				<div class="track" aria-hidden="true">
+					for _, s := range r.Segments() {
+						<span class={ "seg", templ.KV("point", s.Point) } style={ templ.SafeCSS(segStyle(s)) }></span>
+					}
+					<span class="now" style={ templ.SafeCSS("left: " + pct(d.NowPercent)) }></span>
+				</div>
+			} else {
+				<span class="task-desc">Invalid time</span>
+			}
+		</td>
+		<td class="cell-hosts" data-label="Hosts">
+			if r.Task.Hosts == "" {
+				—
+			} else {
+				{ schedule.Hosts(r.Task.Hosts) }
+			}
+		</td>
+	</tr>
+}

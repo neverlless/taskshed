@@ -12,6 +12,7 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	_ "time/tzdata" // viewer time zones must load in distroless/scratch images
 
 	"github.com/neverlless/taskshed/internal/api"
 	"github.com/neverlless/taskshed/internal/database"

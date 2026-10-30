@@ -1,0 +1,133 @@
+package ui
+
+import "github.com/neverlless/taskshed/internal/schedule"
+
+templ CalendarPage(d CalendarData) {
+	@Layout("TaskShed calendar", "calendar") {
+		@PageHead("Weekly schedule")
+		switch  {
+			case d.Failed:
+				@Message("The schedule could not be loaded.", "The server could not read the task list. Check the server logs, then reload the page.", "Reload", d.URL())
+			case d.Empty:
+				@Message("No tasks scheduled yet.", "Register a task with POST /api/tasks, as described in the README, and it will appear here.", "", "")
+			default:
+				<ul class="legend" aria-label="Services">
+					for _, s := range d.Services {
+						<li><span class="swatch" style={ templ.SafeCSS("background: " + d.Colors[s]) }></span>{ s }</li>
+					}
+				</ul>
+				if d.Undated > 0 {
+					<p class="legend-note">{ undatedNote(d.Undated) }<a href="/tasks-view">Tasks page</a>.</p>
+				}
+				@CalendarView(d)
+		}
+	}
+}
+
+// CalendarView is the #calendar-view fragment: week toolbar, grid and the
+// mobile agenda. htmx swaps it on week navigation and every minute.
+templ CalendarView(d CalendarData) {
+	<section
+		id="calendar-view"
+		class="calendar"
+		aria-labelledby="week-title"
+		hx-get={ d.URL() }
+		hx-trigger={ trigger(d.AutoLoad) }
+		hx-target="this"
+		hx-swap="outerHTML"
+	>
+		<div class="cal-toolbar">
+			<div class="cal-nav">
+				@weekLink(d.shiftURL(-7), "Previous week", "‹")
+				@weekLink(d.shiftURL(7), "Next week", "›")
+				if d.isCurrent() {
+					<span class="button" aria-disabled="true">This week</span>
+				} else {
+					@weekLink("/", "", "This week")
+				}
+			</div>
+			<h2 id="week-title" class="cal-title">{ schedule.WeekTitle(d.Monday) }</h2>
+		</div>
+		<div class="cal-grid">
+			<div class="cal-head">
+				<span></span>
+				for _, day := range d.Days {
+					<span class={ "cal-dayhead", templ.KV("today", d.isToday(day)) }>{ day.Date.Format("Mon 2") }</span>
+				}
+			</div>
+			<div class="cal-body">
+				<div class="cal-hours" aria-hidden="true">
+					for h := range 24 {
+						<span>{ hourLabel(h) }</span>
+					}
+				</div>
+				for _, day := range d.Days {
+					<div class={ "cal-day", templ.KV("today", d.isToday(day)) }>
+						for _, p := range day.Pieces {
+							<a
+								class={ "cal-event", templ.KV("short", shortEvent(p)), templ.KV("continued", p.Continued) }
+								href={ templ.URL(taskLink(p.Task.Name)) }
+								title={ p.Tooltip(d.Loc) }
+								aria-label={ d.ariaLabel(p) }
+								style={ templ.SafeCSS(d.eventStyle(p)) }
+							>
+								<span class="ev-time">{ p.TimeLabel(d.Loc) }</span>
+								<span class="ev-title">{ p.Task.Name }</span>
+							</a>
+						}
+						if d.isToday(day) {
+							<div class="now-line" style={ templ.SafeCSS(d.nowStyle()) } aria-hidden="true"></div>
+						}
+					</div>
+				}
+			</div>
+		</div>
+		<div class="agenda">
+			for _, day := range d.Days {
+				<details class={ "agenda-day", templ.KV("today", d.isToday(day)) } open?={ !d.isPast(day) }>
+					<summary>
+						{ day.Date.Format("Monday, 2 January") }
+						if d.isToday(day) {
+							<span class="today-tag">Today</span>
+						}
+					</summary>
+					if len(day.Pieces) == 0 {
+						<p class="agenda-empty">Nothing scheduled</p>
+					} else {
+						<ul>
+							for _, p := range day.Pieces {
+								<li>
+									<a href={ templ.URL(taskLink(p.Task.Name)) } title={ p.Tooltip(d.Loc) } aria-label={ d.ariaLabel(p) }>
+										<span class="swatch" style={ templ.SafeCSS("background: " + d.Colors[p.Task.Service]) }></span>
+										<span class="ag-time">{ p.TimeLabel(d.Loc) }</span>
+										<span class="ag-name">
+											{ p.Task.Name }
+											<span class="ag-service">{ p.Task.Service }</span>
+										</span>
+									</a>
+								</li>
+							}
+						</ul>
+					}
+				</details>
+			}
+		</div>
+	</section>
+}
+
+// weekLink navigates weeks with htmx and still works as a plain link.
+templ weekLink(href, label, text string) {
+	<a
+		class="button"
+		href={ templ.URL(href) }
+		if label != "" {
+			aria-label={ label }
+			title={ label }
+		}
+		hx-get={ href }
+		hx-target="#calendar-view"
+		hx-swap="outerHTML"
+		hx-replace-url="true"
+		hx-indicator="#calendar-view"
+	>{ text }</a>
+}

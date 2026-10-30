@@ -1,0 +1,61 @@
+package ui
+
+// Layout is the page shell shared by both pages. current is "calendar" or "tasks".
+templ Layout(title, current string) {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<meta name="htmx-config" content='{"allowEval":false,"allowScriptTags":false,"includeIndicatorStyles":false,"historyCacheSize":0}'/>
+			<title>{ title }</title>
+			<link rel="stylesheet" href="/static/css/styles.css"/>
+			<link rel="icon" href="/static/images/favicon.ico" type="image/x-icon"/>
+			<script type="module" src="/static/js/app.js"></script>
+			<script defer src="/static/vendor/htmx/htmx.min.js"></script>
+		</head>
+		<body>
+			<header class="topbar">
+				<a class="brand" href="/">TaskShed</a>
+				<nav aria-label="Main">
+					<a
+						href="/"
+						if current == "calendar" {
+							aria-current="page"
+						}
+					>Calendar</a>
+					<a
+						href="/tasks-view"
+						if current == "tasks" {
+							aria-current="page"
+						}
+					>Tasks</a>
+				</nav>
+			</header>
+			<main>
+				{ children... }
+			</main>
+		</body>
+	</html>
+}
+
+// PageHead is the page title with the viewer's time zone, filled in by app.js.
+templ PageHead(title string) {
+	<div class="page-head">
+		<h1>{ title }</h1>
+		<p class="tz" id="tz"></p>
+	</div>
+}
+
+// Message is the empty, error and no-match state. The link is optional.
+templ Message(title, detail, linkText, linkHref string) {
+	<div class="message" role="status">
+		<p class="message-title">{ title }</p>
+		if detail != "" {
+			<p>{ detail }</p>
+		}
+		if linkText != "" {
+			<a class="button" href={ templ.URL(linkHref) }>{ linkText }</a>
+		}
+	</div>
+}
