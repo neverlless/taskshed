@@ -664,6 +664,12 @@ th[aria-sort="descending"] .sort {
     padding-block: 1px;
 }
 
+/* The time keeps its width (up to the box) and the title gives way. */
+.cal-event.short .ev-time {
+    flex: none;
+    max-width: 100%;
+}
+
 /* Continues a run from the previous day. */
 .cal-event.continued {
     border-top-style: dashed;
