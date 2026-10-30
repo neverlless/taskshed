@@ -24,8 +24,6 @@ TaskShed is a small web app and REST API for recording scheduled tasks (backups,
   <img alt="Task table with a 24-hour window strip per task and a marker on tasks running now" src="docs/screenshots/tasks-light.png">
 </picture>
 
-<img alt="Task table on a phone-sized screen" src="docs/screenshots/tasks-mobile.png" width="320">
-
 ## Contents
 
 - [Features](#features)
