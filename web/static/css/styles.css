@@ -732,6 +732,75 @@ th[aria-sort="descending"] .sort {
     border-top-right-radius: 0;
 }
 
+/* Many overlapping runs of one service. The label sits on solid colour so it reads on any fill;
+   below it the fill gets stronger where more runs go at once (set inline per slot). */
+.cal-group {
+    position: absolute;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    color: #141A22;
+    font-size: 13px;
+    line-height: 1.3;
+    text-decoration: none;
+    border: 1px solid var(--c);
+    border-radius: 4px;
+    box-shadow: 0 0 0 1px var(--surface);
+}
+
+.cal-group:hover {
+    z-index: 2;
+    filter: brightness(1.08);
+}
+
+.cal-group:focus-visible {
+    z-index: 3;
+    outline: 2px solid var(--focus);
+    outline-offset: 1px;
+}
+
+.cal-group.continued {
+    border-top-style: dashed;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+
+.grp-label {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding: 2px 5px 3px;
+    background: var(--c);
+}
+
+.grp-label .ev-title {
+    font-weight: 600;
+}
+
+/* Under 90 minutes there is room for one line; the peak stays in the tooltip. */
+.cal-group.short .grp-label {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 6px;
+    padding-block: 1px;
+}
+
+.cal-group.short .ev-time {
+    flex: none;
+}
+
+.cal-group.short .grp-peak {
+    display: none;
+}
+
+.grp-peak {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+}
+
 .now-line {
     position: absolute;
     z-index: 4;

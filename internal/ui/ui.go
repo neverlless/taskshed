@@ -186,6 +186,53 @@ func (d CalendarData) ariaLabel(p schedule.Piece) string {
 
 func taskLink(name string) string { return "/tasks-view?" + url.Values{"q": {name}}.Encode() }
 
+func serviceLink(service string) string {
+	return "/tasks-view?" + url.Values{"service": {service}}.Encode()
+}
+
+// groupStyle places a group like an event and shades each ProfileStep slot by
+// how many of its runs are going then, from faint to the full service colour.
+func (d CalendarData) groupStyle(g schedule.Group) string {
+	var b strings.Builder
+	span := float64(g.End - g.Start)
+	for i, n := range g.Profile {
+		from := float64(i*schedule.ProfileStep) / span * 100
+		to := min(float64((i+1)*schedule.ProfileStep)/span*100, 100)
+		if i > 0 {
+			b.WriteString(", ")
+		}
+		fmt.Fprintf(&b, "color-mix(in srgb, var(--c) %d%%, transparent) %s %s", 15+75*n/g.Peak, pct(from), pct(to))
+	}
+	return fmt.Sprintf("--c: %s; top: %s; height: %s; left: calc(%s + 2px); width: calc(%s - 4px); background: linear-gradient(to bottom, %s)",
+		d.Colors[g.Service], pct(float64(g.Start)/1440*100), pct(span/1440*100),
+		pct(float64(g.Col)/float64(g.Cols)*100), pct(100/float64(g.Cols)), b.String())
+}
+
+func groupAriaLabel(day schedule.Day, g schedule.Group) string {
+	return g.Label() + ", " + day.Date.Format("Mon") + " " + g.TimeLabel() + ", " + g.PeakLabel()
+}
+
+// agendaItem is one row of the phone agenda: a single run or a group.
+type agendaItem struct {
+	Piece *schedule.Piece
+	Group *schedule.Group
+}
+
+func agenda(day schedule.Day) []agendaItem {
+	items := make([]agendaItem, 0, len(day.Pieces)+len(day.Groups))
+	pi, gi := 0, 0
+	for pi < len(day.Pieces) || gi < len(day.Groups) {
+		if gi == len(day.Groups) || (pi < len(day.Pieces) && day.Pieces[pi].Start <= day.Groups[gi].Start) {
+			items = append(items, agendaItem{Piece: &day.Pieces[pi]})
+			pi++
+		} else {
+			items = append(items, agendaItem{Group: &day.Groups[gi]})
+			gi++
+		}
+	}
+	return items
+}
+
 func hourLabel(h int) string { return fmt.Sprintf("%02d:00", h) }
 
 func undatedNote(n int) string {

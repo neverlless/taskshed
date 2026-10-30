@@ -25,6 +25,27 @@ type Piece struct {
 type Day struct {
 	Date   time.Time // local midnight
 	Pieces []Piece   // ordered by start
+	Groups []Group   // ordered by start
+}
+
+const (
+	// MaxLanes is how many runs of one service may overlap before they are
+	// drawn as a Group: past that, side-by-side boxes become unreadable slivers.
+	MaxLanes = 3
+	// ProfileStep is the resolution of a Group's load profile, in minutes.
+	ProfileStep = 30
+)
+
+// Group stands in for heavily overlapping runs of one service on one day.
+type Group struct {
+	Service    string
+	Pieces     []Piece
+	Start, End int // local minutes within the day
+	// Continued: it starts at midnight with a run from an earlier day; Continues: a run goes past this day.
+	Continued, Continues bool
+	Peak                 int   // most runs going at once
+	Profile              []int // runs going in each ProfileStep slot from Start
+	Col, Cols            int
 }
 
 // WeekStart returns local midnight of the Monday of the week containing t in loc.
@@ -60,7 +81,8 @@ func Week(tasks []database.Task, monday time.Time) []Day {
 			}
 		}
 		slices.SortStableFunc(days[i].Pieces, func(a, b Piece) int { return a.Start - b.Start })
-		pack(days[i].Pieces)
+		days[i].Pieces, days[i].Groups = group(days[i].Pieces)
+		pack(days[i].Pieces, days[i].Groups)
 	}
 	return days
 }
@@ -69,14 +91,129 @@ func Week(tasks []database.Task, monday time.Time) []Day {
 // so packing also separates events whose boxes would touch.
 const minVisualMinutes = 30
 
-func pack(ps []Piece) {
-	spans := make([]Span, len(ps))
-	for i, p := range ps {
-		spans[i] = Span{p.Start, max(p.End, p.Start+minVisualMinutes)}
+func (p Piece) span() Span { return Span{p.Start, max(p.End, p.Start+minVisualMinutes)} }
+
+// group replaces each cluster of one service's overlapping pieces that would
+// need more than MaxLanes columns with a Group. ps must be ordered by start.
+func group(ps []Piece) ([]Piece, []Group) {
+	var services []string
+	byService := map[string][]Piece{}
+	for _, p := range ps {
+		if _, ok := byService[p.Task.Service]; !ok {
+			services = append(services, p.Task.Service)
+		}
+		byService[p.Task.Service] = append(byService[p.Task.Service], p)
 	}
-	for i, pl := range Pack(spans) {
-		ps[i].Col, ps[i].Cols = pl.Col, pl.Cols
+	var kept []Piece
+	var groups []Group
+	for _, svc := range services {
+		svcPieces := byService[svc]
+		for len(svcPieces) > 0 {
+			// The cluster runs while each next piece starts before the cluster ends.
+			n, end := 1, svcPieces[0].span().End
+			for n < len(svcPieces) && svcPieces[n].Start < end {
+				end = max(end, svcPieces[n].span().End)
+				n++
+			}
+			cluster := svcPieces[:n]
+			svcPieces = svcPieces[n:]
+			if g := newGroup(cluster); g.Peak > MaxLanes {
+				groups = append(groups, g)
+			} else {
+				kept = append(kept, cluster...)
+			}
+		}
 	}
+	slices.SortStableFunc(kept, func(a, b Piece) int { return a.Start - b.Start })
+	slices.SortStableFunc(groups, func(a, b Group) int { return a.Start - b.Start })
+	return kept, groups
+}
+
+func newGroup(ps []Piece) Group {
+	g := Group{Service: ps[0].Task.Service, Pieces: ps, Start: ps[0].Start}
+	type edge struct{ at, delta int }
+	var edges []edge
+	for _, p := range ps {
+		sp := p.span()
+		g.End = max(g.End, min(sp.End, dayMinutes))
+		g.Continued = g.Continued || (p.Continued && p.Start == 0)
+		g.Continues = g.Continues || p.Continues
+		edges = append(edges, edge{sp.Start, 1}, edge{sp.End, -1})
+	}
+	// Ends before starts at the same minute: back-to-back runs don't overlap.
+	slices.SortFunc(edges, func(a, b edge) int {
+		if a.at != b.at {
+			return a.at - b.at
+		}
+		return a.delta - b.delta
+	})
+	running := 0
+	for _, e := range edges {
+		running += e.delta
+		g.Peak = max(g.Peak, running)
+	}
+	for from := g.Start; from < g.End; from += ProfileStep {
+		to, n := from+ProfileStep, 0
+		for _, p := range ps {
+			if sp := p.span(); sp.Start < to && sp.End > from {
+				n++
+			}
+		}
+		g.Profile = append(g.Profile, n)
+	}
+	return g
+}
+
+func pack(ps []Piece, gs []Group) {
+	spans := make([]Span, 0, len(ps)+len(gs))
+	for _, p := range ps {
+		spans = append(spans, p.span())
+	}
+	for _, g := range gs {
+		spans = append(spans, Span{g.Start, g.End})
+	}
+	placements := Pack(spans)
+	for i := range ps {
+		ps[i].Col, ps[i].Cols = placements[i].Col, placements[i].Cols
+	}
+	for i := range gs {
+		pl := placements[len(ps)+i]
+		gs[i].Col, gs[i].Cols = pl.Col, pl.Cols
+	}
+}
+
+// TimeLabel is the visible time of a group: "20:00–07:40", "from 20:00" when
+// it runs past midnight, "until 07:40" when it began the day before.
+func (g Group) TimeLabel() string {
+	switch {
+	case g.Continued && g.Continues:
+		return "all day"
+	case g.Continued:
+		return "until " + clock(g.End)
+	case g.Continues:
+		return "from " + clock(g.Start)
+	}
+	return clock(g.Start) + "–" + clock(g.End)
+}
+
+// Label is "56 Bareos jobs".
+func (g Group) Label() string { return fmt.Sprintf("%d %s jobs", len(g.Pieces), g.Service) }
+
+// PeakLabel is "up to 41 at once".
+func (g Group) PeakLabel() string { return fmt.Sprintf("up to %d at once", g.Peak) }
+
+// Tooltip names the first few runs; the tasks page lists them all.
+func (g Group) Tooltip() string {
+	lines := []string{g.Label(), g.TimeLabel() + ", " + g.PeakLabel()}
+	const shown = 5
+	for i, p := range g.Pieces {
+		if i == shown {
+			lines = append(lines, fmt.Sprintf("and %d more", len(g.Pieces)-shown))
+			break
+		}
+		lines = append(lines, p.Task.Name)
+	}
+	return strings.Join(lines, "\n")
 }
 
 // Span is a half-open interval [Start, End) of minutes.

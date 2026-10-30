@@ -2,6 +2,7 @@ package schedule
 
 import (
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -119,5 +120,77 @@ func TestWeekTitle(t *testing.T) {
 		if got := WeekTitle(d); got != want {
 			t.Errorf("%s: %q; want %q", in, got, want)
 		}
+	}
+}
+
+func TestWeekGroupsCrowdedService(t *testing.T) {
+	monday := time.Date(2026, 10, 26, 0, 0, 0, 0, time.UTC)
+	backup := func(name, at, dur string) database.Task {
+		t := recurring(at, dur, "Mon")
+		t.Name, t.Service = name, "Bareos"
+		return t
+	}
+	patch := recurring("21:00", "01:00", "Mon")
+	patch.Name, patch.Service = "patch", "AWX"
+	tasks := []database.Task{
+		backup("a", "20:00", "02:00"), // 20:00–22:00
+		backup("b", "20:00", "01:00"), // 20:00–21:00
+		backup("c", "20:30", "01:00"), // 20:30–21:30
+		backup("d", "20:45", "00:45"), // 20:45–21:30: four at once from 20:45
+		backup("e", "21:45", "03:00"), // overlaps a, runs past midnight
+		backup("lonely", "06:00", "01:00"),
+		patch,
+	}
+	day := Week(tasks, monday)[0]
+
+	if len(day.Groups) != 1 {
+		t.Fatalf("groups = %+v", day.Groups)
+	}
+	g := day.Groups[0]
+	if g.Service != "Bareos" || len(g.Pieces) != 5 || g.Peak != 4 || g.Start != 20*60 || g.End != 24*60 ||
+		g.Continued || !g.Continues || g.TimeLabel() != "from 20:00" || g.Label() != "5 Bareos jobs" {
+		t.Errorf("group = %+v (%s)", g, g.TimeLabel())
+	}
+	// 30-minute slots from 20:00: a,b | a,b,c,d | a,c,d | a,e | e | e | e | e
+	if want := []int{2, 4, 3, 2, 1, 1, 1, 1}; !slices.Equal(g.Profile, want) {
+		t.Errorf("profile = %v; want %v", g.Profile, want)
+	}
+	// The lone backup and the AWX patch stay single events; the patch sits beside the group.
+	var names []string
+	for _, p := range day.Pieces {
+		names = append(names, p.Task.Name)
+	}
+	if !slices.Equal(names, []string{"lonely", "patch"}) {
+		t.Errorf("pieces = %v", names)
+	}
+	if p := day.Pieces[1]; p.Cols != 2 || g.Cols != 2 || p.Col == g.Col {
+		t.Errorf("patch col %d/%d, group col %d/%d", p.Col, p.Cols, g.Col, g.Cols)
+	}
+	if !strings.HasPrefix(g.Tooltip(), "5 Bareos jobs\nfrom 20:00, up to 4 at once\na\n") {
+		t.Errorf("tooltip = %q", g.Tooltip())
+	}
+}
+
+func TestWeekKeepsFewOverlapsAsEvents(t *testing.T) {
+	monday := time.Date(2026, 10, 26, 0, 0, 0, 0, time.UTC)
+	tasks := []database.Task{
+		recurring("20:00", "02:00", "Mon"),
+		recurring("20:00", "02:00", "Mon"),
+		recurring("20:00", "02:00", "Mon"),
+	}
+	day := Week(tasks, monday)[0]
+	if len(day.Groups) != 0 || len(day.Pieces) != 3 || day.Pieces[0].Cols != 3 {
+		t.Errorf("groups %d, pieces %d", len(day.Groups), len(day.Pieces))
+	}
+}
+
+func TestWeekBackToBackRunsDoNotGroup(t *testing.T) {
+	monday := time.Date(2026, 10, 26, 0, 0, 0, 0, time.UTC)
+	var tasks []database.Task
+	for _, at := range []string{"20:00", "21:00", "22:00", "23:00"} {
+		tasks = append(tasks, recurring(at, "01:00", "Mon"))
+	}
+	if day := Week(tasks, monday)[0]; len(day.Groups) != 0 || len(day.Pieces) != 4 {
+		t.Errorf("groups %d, pieces %d", len(day.Groups), len(day.Pieces))
 	}
 }
